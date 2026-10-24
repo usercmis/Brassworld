@@ -888,7 +888,9 @@ function renderHint() {
       if (unlinked.length && st.round <= 4) h = `与 ${unlinked[0].name} 网络互通：双方各得 $8、收入 +1`;
     }
   }
-  el.textContent = h; el.classList.toggle("hide", !h);
+  el.textContent = h;
+  el.classList.toggle("hint-port", h.includes("网络未连通开张的贸易港"));
+  el.classList.toggle("hide", !h);
 }
 
 // ---------- 城市提示框 ----------
