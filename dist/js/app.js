@@ -494,9 +494,13 @@ function renderActions() {
     const n = UI.filter ? filtered(g[k]).length : k === "DEVELOP" ? g[k].filter(a => !a.dev || a.dev.length === 1).length : g[k].length;
     return `<button data-k="${k}" class="${k === UI.tab ? "on" : ""}">${KIND_ZH[k]}${best && best.kind === k ? "★" : ""}<span class="n">${n}</span></button>`;
   }).join("") +
-    (fk ? `<button class="filter" id="clearFilter">筛选：${fk.city ? cityZh(fk.city) : fk.link.split("|").map(cityZh).join("—")} ✕</button>` : "") +
-    box.innerHTML = `<div class="ct"><div class="t1">Skip</div><div class="t2">Skip your action and discard 1 card</div>${discardHTML()}</div>`;
-  if (UI.tab === "DEVELOP" && !UI.filter) { list.innerHTML = devPickerHTML(g.DEVELOP, best); renderConfirm(); return; }
+    (fk ? `<button class="filter" id="clearFilter">筛选：${fk.city ? cityZh(fk.city) : fk.link.split("|").map(cityZh).join("—")} ✕</button>` : "");
+
+if (UI.tab === "DEVELOP" && !UI.filter) {
+  list.innerHTML = devPickerHTML(g.DEVELOP, best);
+  renderConfirm();
+  return;
+}
   let items = filtered(g[UI.tab] || []);
   if (UI.tab === "BUILD") items.sort((a, b) => IND_ORDER.indexOf(a.industry) - IND_ORDER.indexOf(b.industry) || a.cost - b.cost);
   else if (UI.tab === "NETWORK") items.sort((a, b) => (!!a.second - !!b.second) || a.cost - b.cost);
