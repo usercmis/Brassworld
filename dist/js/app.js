@@ -764,7 +764,7 @@ function showMatModal(pid) {
             const left = sup[t.level] || 0;
             const era = t.era === "E1" ? "帆" : t.era === "E2" ? "蒸" : "";
             return `<div class="tcard ${nt && nt.level === t.level ? "next" : ""} ${left ? "" : "gone"}">
-              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}${t.noDev ? `<span class="era nd" title="不可开发：须建造后才能使用下一级">不可开发</span>` : ""}<span class="c">$${t.cost}</span></div>
+              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}<span class="c">$${t.cost}</span></div>${t.noDev ? `<div class="nodev-note" title="Must build this tile to unlock the next level">Cannot be developed</div>` : ""}
               <div class="r">${needHTML(t)}</div>
               <div class="r"><span><b>${t.vp}</b>分</span><span>· 收入<b>+${t.income}</b></span><span>· 连线<b>${t.linkVp}</b></span>${ind === "PROV" ? `<span title="帆船时代建成放 1 桶，蒸汽时代建成放 2 桶">· 产啤酒<b>1</b>/<b>2</b></span>` : t.produces ? `<span>· 产${ind === "COAL" ? "煤" : "铁"}<b>${t.produces}</b></span>` : ""}</div>
               <span class="cnt">×${left}/${t.copies}</span></div>`;
