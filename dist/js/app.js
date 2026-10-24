@@ -536,7 +536,7 @@ function devPickerHTML(acts, best) {
       <span class="nm">${B.industryZh[a.industry]}${lv}${bestInds.includes(a.industry) ? "★" : ""}</span>
       ${n === 2 ? `<span class="x2">×2</span>` : ""}</button>`;
   }).join("");
-  let note = "选择 1–2 块要移除的板件，每块 1 铁；同一产业可点两次。";
+  let note = "Choose 1–2 industry tiles to remove. Pay 1 iron per tile. You may select the same industry twice.";
   if (p.length && !devAction(p)) note = "该组合不可执行：现金不足以支付 2 块铁。";
   return `<div class="dpick"><div class="dnote">${note}</div><div class="dbtns">${btns}</div></div>`;
 }
