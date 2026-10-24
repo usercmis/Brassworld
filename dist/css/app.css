@@ -240,7 +240,7 @@ svg.targeting .lk{opacity:.35}
 .act.sel{border-color:var(--gold2);background:#33291a;box-shadow:0 0 0 1px var(--gold) inset}
 .act{position:relative}
 .act.best{border-color:var(--goldq)}
-.act.best::before{content:"推荐";position:absolute;right:6px;top:-7px;font-size:9.5px;line-height:13px;background:var(--gold);color:#17120a;padding:0 5px;font-weight:700}
+.act.best::before{content:"Recommended";position:absolute;right:6px;top:-7px;font-size:9.5px;line-height:13px;background:var(--gold);color:#17120a;padding:0 5px;font-weight:700}
 .athumb{width:34px;height:34px;flex:none;border:1px solid rgba(109,87,41,.6);background-color:#0d0b07;border-radius:2px}
 .athumb.sym{display:flex;align-items:center;justify-content:center;color:var(--gold)}
 .act .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
