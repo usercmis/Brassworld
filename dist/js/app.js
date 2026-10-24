@@ -1,7 +1,7 @@
 // 《工业革命：世界》前端主程序
 import { SYMBOLS, PCOL, IND_ART, artCSS, regionArt, iconHTML, cubeHTML, avatarHTML, AVATARS, AVATAR_ZH,
   ROMAN, BONUS_FULL, BONUS_SHORT, IND_ORDER } from "./art.js";
-import { MapView } from "./map.js";
+import { MapView } from "./map.js?v=accessibility-text-2";
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -1606,6 +1606,7 @@ function showSettings() {
     if (k === "vol") { SET.vol = v; if (SET.music) bgmRamp(+v, 0.4); }
     if (k === "hints") { SET.hints = v === "1"; if (S && S.started) { const st = await api("/api/settings", { hints: SET.hints }); S = st; renderAll(); } }
     applyA11yPrefs();
+    if (k === "largeText" && map) map.layout();
     savePrefs();
   });
   d.querySelectorAll(".x,.btns button").forEach(b => b.onclick = () => d.remove());

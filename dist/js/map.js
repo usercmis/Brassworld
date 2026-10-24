@@ -288,6 +288,11 @@ export class MapView {
     return this.fitTo({ x: cx - w / 2, y: cy - h / 2, w, h }, true);
   }
   animateTo(t, D = 460) {
+    if (document.documentElement.classList.contains("a11y-reduce-motion")) {
+      cancelAnimationFrame(this._raf);
+      this.view = t; this.layout();
+      return Promise.resolve();
+    }
     const f = Object.assign({}, this.view), t0 = performance.now();
     cancelAnimationFrame(this._raf);
     if (document.hidden) { this.view = t; this.layout(); return Promise.resolve(); }
@@ -387,6 +392,8 @@ export class MapView {
     this.scale = this._laidSc = sc;
     clearTimeout(this._lblTimer);
     const u = p => p / sc;
+    // SVG text uses inline sizes, so scale map labels explicitly for the larger-text setting.
+    const textScale = document.documentElement.classList.contains("a11y-large-text") ? 1.3 : 1;
     const platesOn = sc >= PLATE_MIN_SCALE;
     // 纹理平铺尺寸跟着缩放换档：固定一个尺寸的话，放大后一格纹理被拉到几千像素宽，糊成一片
     const tile = sc < 9 ? 92 : sc < 22 ? 48 : sc < 50 ? 26 : 14;
@@ -428,8 +435,8 @@ export class MapView {
         // 缩放手势中不重新避让：沿用上次避让的结果，免得所有小字名同时冒出来叠在一起
         t.style.display = vis && !(opts.quick && t._clash) ? "" : "none";
         if (!vis) return;
-        t.style.fontSize = u(11) + "px"; t.style.strokeWidth = u(3) + "px";
-        t.setAttribute("x", c.x); t.setAttribute("y", c.y + u(15));
+        t.style.fontSize = u(11 * textScale) + "px"; t.style.strokeWidth = u(3 * textScale) + "px";
+        t.setAttribute("x", c.x); t.setAttribute("y", c.y + u(15 * textScale));
         cand.push(t);
       });
       cand.sort((a, b) => (+b.dataset.pri) - (+a.dataset.pri));
@@ -445,9 +452,9 @@ export class MapView {
     const zoneOn = sc < 7.5, regOn = sc >= 4.2 && sc < 40;
     this.gZone.style.display = zoneOn ? "" : "none";
     this.gReg.style.display = regOn ? "" : "none";
-    this.gZone.querySelectorAll("text").forEach(t => { t.style.fontSize = u(28) + "px"; t.style.strokeWidth = u(5) + "px"; });
+    this.gZone.querySelectorAll("text").forEach(t => { t.style.fontSize = u(28 * textScale) + "px"; t.style.strokeWidth = u(5 * textScale) + "px"; });
     this.gReg.querySelectorAll("text").forEach(t => {
-      t.style.fontSize = u(sc > 14 ? 13 : 15) + "px"; t.style.strokeWidth = u(3.5) + "px";
+      t.style.fontSize = u((sc > 14 ? 13 : 15) * textScale) + "px"; t.style.strokeWidth = u(3.5 * textScale) + "px";
     });
     this.gReg.style.opacity = sc > 14 ? .55 : 1;
     this._regOn = regOn;
