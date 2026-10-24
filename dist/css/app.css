@@ -596,3 +596,45 @@ table.score tr.me td{background:rgba(201,161,90,.08)}
 .strategy-advisor p {
   white-space: pre-line;
 }
+/* Industry board: development restriction label */
+.nodev-note {
+  display: block;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #b86a27;
+  border: 1px solid currentColor;
+  padding: 2px 4px;
+  margin: 3px 0 5px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+.modal.wide {
+  max-width: 980px;
+  max-height: calc(100dvh - 28px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+/* Industry Board: scroll the tiles horizontally */
+.modal.wide .matgrid {
+  display: grid;
+  grid-template-columns: repeat(6, 175px);
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  box-sizing: border-box;
+}
+
+/* Keep industry tiles within their columns */
+.modal.wide .mcol,
+.modal.wide .tcard {
+  min-width: 0;
+  box-sizing: border-box;
+}
+/* Remove decorative inner border from the Industry Board */
+.modal.wide::after {
+  display: none;
+}
