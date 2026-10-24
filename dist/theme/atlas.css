@@ -58,3 +58,105 @@ button:focus-visible,.pcard:focus-visible,.act:focus-visible{outline-color:#8050
 @media(max-width:1000px){#top{padding:9px 12px;gap:10px}.brand{font-size:24px}.brand:after{font-size:8px}.meta{font-size:12px}#top button{padding:5px 9px}.pane{padding:9px}#cards{grid-template-columns:repeat(4,59px)}.pcard{width:59px;height:87px}.modal{padding:23px}.field label{min-width:98px}}
 @media(max-width:760px){#top{min-height:56px;gap:8px}.brand{font-size:22px}.brand:after{font-size:7px}#infobar{padding:5px}.pl{min-height:59px;padding:6px}.pl .nm{font-size:13px}.pl .vp{font-size:22px}#dock{display:block;background:#faf6eb}#sheetTabs button{background:#f5ecda;color:#775c3c}#sheetTabs button.on{color:#49301c;border-color:#9d8052;background:#e8d7b5}#menu.open{background:#49382a}#mapbtns{right:7px;top:8px}#mapbtns button{font-size:12px;padding:5px 8px}#mapwrap:after{font-size:7px;left:9px;bottom:8px}#cards{grid-template-columns:repeat(8,minmax(48px,1fr));gap:4px}.pcard{width:auto;height:88px}.modal{max-width:93vw;padding:20px}.modal h2{font-size:27px}.avgrid{gap:5px}.avopt{min-width:64px;max-width:78px}.field{flex-wrap:wrap}.field label{min-width:85px}.seg .hint{white-space:normal}.modal .btns button{font-size:14px;padding:8px 13px}}
 .atlas-connection-error{position:fixed;z-index:10000;left:50%;bottom:25px;transform:translateX(-50%);width:min(640px,92vw);padding:18px 22px;background:#faf3df;color:#78432e;border:1px solid #ae8060;box-shadow:0 10px 40px #46311f33;font:16px/1.5 Garamond,serif}.atlas-connection-error button{margin-left:10px}
+/* Accessible city navigator: keep text and controls legible in the light atlas theme. */
+#cityNavigator{background:#faf6eb;border-color:#8c7654;box-shadow:0 5px 18px #35271f30;color:#392719}
+#cityNavigator summary{color:#392719}
+#cityNavigator .city-help,#cityNavigator .city-section-title{color:#5a4525}
+#cityNavigator .city-option{background:#fffdf6;border-color:#9a8058;color:#302012}
+#cityNavigator .city-option:hover{background:#e8ddc5;border-color:#66483a}
+#cityNavigator .city-option:focus-visible{outline:3px solid #80504a;outline-offset:2px}
+html.a11y-contrast #cityNavigator{background:#000;border-color:#ffeb00;color:#fff}
+html.a11y-contrast #cityNavigator summary,html.a11y-contrast #cityNavigator .city-help,html.a11y-contrast #cityNavigator .city-section-title{color:#fff}
+html.a11y-contrast #cityNavigator .city-option{background:#000;border-color:#ffeb00;color:#fff}
+html.a11y-contrast #cityNavigator .city-option:focus-visible{outline-color:#ffeb00}
+html.a11y-contrast .modal{background:#fff!important;border-color:#000!important;color:#000!important;box-shadow:0 0 0 4px #ffeb00,0 18px 50px #000!important}
+html.a11y-contrast .modal *:not(button){color:#000!important}
+html.a11y-contrast .modal:before{border-color:#000!important}
+html.a11y-contrast .modal button{background:#fff!important;border:2px solid #000!important;color:#000!important;box-shadow:none!important}
+html.a11y-contrast .modal button.on,html.a11y-contrast .modal button.primary{background:#ffeb00!important;color:#000!important}
+html.a11y-contrast .modal button:focus-visible{outline:3px solid #000!important;outline-offset:2px}
+.a11y-setting{flex:1;min-width:0}
+.a11y-help{margin-top:5px;color:#715736;font-size:12px;line-height:1.45}
+html.a11y-contrast .modal .a11y-help{color:#000!important}
+/* Keep the atlas palette light, but make all inherited UI text and status colors dark. */
+html.a11y-contrast{
+  --ink0:#fff;--ink1:#fff;--ink2:#f2f2f2;--ink3:#e5e5e5;--ink4:#d8d8d8;
+  --rule:#555;--rule2:#111;--gold:#604300;--gold2:#111;--goldq:#604300;
+  --txt:#111;--txt2:#222;--dim:#333;--dim2:#444;
+  --crimson:#52001c;--crimson2:#760025;--good:#174d24;--bad:#800000;
+}
+/* Preserve light text where the game intentionally uses a dark panel. */
+html.a11y-contrast #orderDraw,html.a11y-contrast #startSplash,html.a11y-contrast #orderStrip,
+html.a11y-contrast .afc,html.a11y-contrast #yourTurn .pill{
+  --ink0:#000;--ink1:#050505;--ink2:#111;--ink3:#1d1d1d;--ink4:#292929;
+  --rule:#d8d8d8;--rule2:#ffeb00;--gold:#ffeb00;--gold2:#fff;--goldq:#d6bd00;
+  --txt:#fff;--txt2:#eee;--dim:#ddd;--dim2:#ccc;--good:#a6ffad;--bad:#ffaaaa;
+}
+html.a11y-contrast #map .lk{stroke:#161616!important;stroke-width:2.5px;opacity:1}
+html.a11y-contrast #map .lk.sea{stroke:#064766!important;stroke-dasharray:7 4}
+html.a11y-contrast button:focus-visible,html.a11y-contrast .pcard:focus-visible,html.a11y-contrast .act:focus-visible{
+  outline:3px solid #111!important;box-shadow:0 0 0 5px #ffeb00!important
+}
+html.a11y-contrast #cityNavigator summary:focus-visible,html.a11y-contrast #cityNavigator .city-option:focus-visible,
+html.a11y-contrast .modal button:focus-visible{box-shadow:0 0 0 5px #ffeb00!important}
+/* Dark high contrast is a complete alternate palette, not a text-only inversion. */
+html.a11y-contrast-dark{
+  --ink0:#000;--ink1:#050505;--ink2:#111;--ink3:#1a1a1a;--ink4:#222;
+  --rule:#aaa;--rule2:#ffeb00;--gold:#ffeb00;--gold2:#fff;--goldq:#ffeb00;
+  --txt:#fff;--txt2:#eee;--dim:#ddd;--dim2:#ccc;--good:#a6ffad;--bad:#ffaaaa;
+}
+html.a11y-contrast-dark body,html.a11y-contrast-dark #top,html.a11y-contrast-dark #infobar,
+html.a11y-contrast-dark #dock,html.a11y-contrast-dark #mapwrap,html.a11y-contrast-dark #mapbtns,
+html.a11y-contrast-dark #mapbtns button,html.a11y-contrast-dark .pl,html.a11y-contrast-dark .mz,
+html.a11y-contrast-dark .pane,html.a11y-contrast-dark .pcard,html.a11y-contrast-dark .act,
+html.a11y-contrast-dark #confirm,html.a11y-contrast-dark .mt,html.a11y-contrast-dark .modal,
+html.a11y-contrast-dark #cardpop,html.a11y-contrast-dark .toast,html.a11y-contrast-dark #hint,
+html.a11y-contrast-dark #tip,html.a11y-contrast-dark #playbar,html.a11y-contrast-dark #banner,
+html.a11y-contrast-dark #logpanel,html.a11y-contrast-dark .coach .bub,html.a11y-contrast-dark .resume,
+html.a11y-contrast-dark #cityNavigator,html.a11y-contrast-dark #cityNavigator .city-option{
+  background:#000!important;color:#fff!important;border-color:#ffeb00!important;box-shadow:none
+}
+html.a11y-contrast-dark #map{background:#000!important}
+html.a11y-contrast-dark #app *:not(svg):not(path){color:#fff!important}
+html.a11y-contrast-dark #app button{background:#000!important;color:#fff!important;border-color:#ffeb00!important}
+html.a11y-contrast-dark #app button.primary,html.a11y-contrast-dark #app button.on{
+  background:#ffeb00!important;color:#000!important
+}
+html.a11y-contrast-dark #top button.primary,html.a11y-contrast-dark #mapbtns button.on,
+html.a11y-contrast-dark button.on,html.a11y-contrast-dark .pcard.sel,html.a11y-contrast-dark .act.sel,
+html.a11y-contrast-dark .pl.active,html.a11y-contrast-dark .mz.mine{
+  background:#ffeb00!important;color:#000!important;border-color:#ffeb00!important
+}
+html.a11y-contrast-dark #app :is(button.on,.pcard.sel,.act.sel,.pl.active,.mz.mine),
+html.a11y-contrast-dark #app .modal button.primary{color:#000!important}
+html.a11y-contrast-dark #infobar .pl.active{background:#ffeb00!important;border-color:#ffeb00!important}
+html.a11y-contrast-dark #sheetTabs button,html.a11y-contrast-dark #acttabs button{
+  background:#000!important;color:#fff!important;border-color:#ffeb00!important
+}
+html.a11y-contrast-dark #sheetTabs button.on,html.a11y-contrast-dark #acttabs button.on{
+  background:#ffeb00!important;color:#000!important
+}
+html.a11y-contrast-dark #map .g-sea rect{fill:#000!important}
+html.a11y-contrast-dark #map .land{fill:#151515!important;stroke:#fff!important}
+html.a11y-contrast-dark #map .grat{stroke:#aaa!important;opacity:.65!important}
+html.a11y-contrast-dark #map .zone-lbl,html.a11y-contrast-dark #map .reg-lbl,
+html.a11y-contrast-dark #map .dotlbl{fill:#fff!important;stroke:#000!important}
+html.a11y-contrast-dark #map .dot{fill:#ffeb00!important;stroke:#000!important;stroke-width:2.4px}
+html.a11y-contrast-dark #map .lk{stroke:#ffeb00!important;stroke-width:2.5px;opacity:1}
+html.a11y-contrast-dark #map .lk.sea{stroke:#00ffff!important;stroke-dasharray:7 4}
+html.a11y-contrast-dark #map .plate .nm rect{fill:#000!important;stroke:#ffeb00!important;stroke-width:1.5px}
+html.a11y-contrast-dark #map .plate .nm text{fill:#fff!important;stroke:#000!important}
+html.a11y-contrast-dark #mapwrap:after{color:#fff!important}
+html.a11y-contrast-dark .modal .avopt,html.a11y-contrast-dark #cardpop .cp-head,
+html.a11y-contrast-dark #cardpop .cp-city{background:#000!important;color:#fff!important;border-color:#ffeb00!important}
+html.a11y-contrast-dark .modal .avopt.on{background:#ffeb00!important;color:#000!important}
+html.a11y-contrast-dark .modal:before{color:#fff!important;border-color:#ffeb00!important}
+html.a11y-contrast-dark .modal:after{border-color:#ffeb00!important}
+html.a11y-contrast-dark .modal button{background:#000!important;color:#fff!important;border:2px solid #ffeb00!important}
+html.a11y-contrast-dark .modal button.on,html.a11y-contrast-dark .modal button.primary{
+  background:#ffeb00!important;color:#000!important
+}
+html.a11y-contrast-dark #app .modal button.on,html.a11y-contrast-dark #app .modal button.primary{color:#000!important}
+html.a11y-contrast-dark :is(button,.pcard,.act,#cityNavigator summary):focus-visible{
+  outline:3px solid #ffeb00!important;outline-offset:3px;box-shadow:0 0 0 5px #000!important
+}
