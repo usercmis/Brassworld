@@ -1678,6 +1678,15 @@ function bindUI() {
   $("#btnHelp").onclick = () => { $("#menu").classList.remove("open"); showHelp(); };
   $("#btnSettings").onclick = () => { $("#menu").classList.remove("open"); showSettings(); };
   $("#btnMenu").onclick = () => $("#menu").classList.toggle("open");
+  const cityNavigator = $("#cityNavigator"), cityToggle = $("#btnCities");
+  if (cityNavigator && cityToggle) {
+    const syncCityToggle = () => cityToggle.setAttribute("aria-expanded", String(cityNavigator.open));
+    cityToggle.onclick = () => {
+      cityNavigator.open = !cityNavigator.open; syncCityToggle();
+      if (cityNavigator.open) cityNavigator.querySelector("summary")?.focus();
+    };
+    cityNavigator.addEventListener("toggle", syncCityToggle);
+  }
   $("#btnWorld").onclick = () => map.fitWorld();
   $("#btnHome").onclick = () => { if (S && S.started) map.focusRegion(me().home); };
   $("#btnLog").onclick = () => { if (isMobile()) setSheet("log", true); else $("#logpanel").classList.toggle("hide"); renderLog(V() || S); };
