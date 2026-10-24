@@ -31,6 +31,12 @@ const V = () => D || S;
 const me = (st = V()) => st.players.find(p => p.isMe);
 const pname = (st, id) => (st.players.find(p => p.id === id) || {}).name || "";
 
+const englishPlayerName = name => ({
+  "麦克莱伦": "McClellan",
+  "阿什沃思": "Ashworth",
+  "彭伯顿": "Pemberton"
+})[name] || name;
+
 // ================= 启动 =================
 async function boot() {
   $("#symbols").innerHTML = SYMBOLS;
@@ -154,14 +160,14 @@ function renderPlayers(st, bump = {}) {
   $("#players").innerHTML = ps.map(p => {
     const links = (st.linkedPairs || []).filter(k => k.includes(p.id)).map(k => k[0] === p.id ? k[1] : k[0]);
     return `<div class="pl ${p.id === st.active ? "active" : ""} ${p.isMe ? "me" : ""}" data-p="${p.id}"
-      title="${p.name}｜板件 ${p.tiles} · 连线 ${p.links} · 手牌 ${p.hand}｜点击查看全部板件">
+      title="${englishPlayerName(p.name)}｜板件 ${p.tiles} · 连线 ${p.links} · 手牌 ${p.hand}｜点击查看全部板件">
       <span class="order">${order.indexOf(p.id) + 1}</span>
       ${avatarHTML(p.avatar, PCOL[p.id], isMobile() ? 30 : 40)}
       <div class="body">
-        <div class="r1"><span class="nm" style="color:${PCOL[p.id]}">${p.name}</span>
-          <span class="vp ${bump[p.id] ? "bump" : ""}" title="胜利点">${p.vp}</span></div>
-        <div class="r2"><span>$<b class="money">${p.money}</b></span><span>收入 <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
-        <div class="r3">${p.levelZh ? `<span class="lv">${p.levelZh}</span>` : ""}<span class="home">${p.homeZh}</span>${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="已与 ${pname(st, i)} 互通"></span>`).join("")}</div>
+      <div class="r1"><span class="nm" style="color:${PCOL[p.id]}">${englishPlayerName(p.name)}</span>
+      <span class="vp ${bump[p.id] ? "bump" : ""}" title="胜利点">${p.vp}</span></div>
+      <div class="r2"><span>$<b class="money">${p.money}</b></span><span>收入 <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
+      <div class="r3">${p.levelZh ? `<span class="lv">${p.levelZh}</span>` : ""}<span class="home">${p.homeZh}</span>${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="已与 ${pname(st, i)} 互通"></span>`).join("")}</div>
       </div></div>`;
   }).join("");
   layoutInfobar();
@@ -1209,7 +1215,7 @@ async function orderDraw(st) {
 async function startSplash(st) {
   const d = document.createElement("div"); d.id = "startSplash";
   d.innerHTML = `<div class="t1">${st.eraZh}</div><div class="t2">游戏开始</div>
-    <div class="t3">第 1 轮每人只有 1 个动作 · 之后每回合 2 个</div>`;
+    <div class="t3">Round 1: 1 action per player · Subsequent rounds: 2 actions per player</div>`;
   document.body.appendChild(d);
   await clickOrWait(d, DUR(1900));
   d.classList.add("out"); await sleep(UI.skip ? 0 : 320); d.remove();
@@ -1374,7 +1380,7 @@ function showNewGame() {
     finally { wait.remove(); }
     await playOpening(st);
     await map.focusRegion(me().home);
-    toast(`本土：${me().homeZh}。${isMobile() ? "点按" : "悬停"}手牌可查看可建城市与所需资源`);
+    toast(`Home: ${me().homeZh}. Hover over cards in your hand to see buildable cities and required resources.`);
     try { if (!localStorage.getItem("bw_seen3")) { showHelp(); localStorage.setItem("bw_seen3", "1"); } } catch (e) { }
   };
 }
