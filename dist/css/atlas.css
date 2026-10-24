@@ -61,7 +61,8 @@ button:focus-visible,.pcard:focus-visible,.act:focus-visible{outline-color:#8050
 .atlas-connection-error{position:fixed;z-index:10000;left:50%;bottom:25px;transform:translateX(-50%);width:min(640px,92vw);padding:18px 22px;background:#faf3df;color:#78432e;border:1px solid #ae8060;box-shadow:0 10px 40px #46311f33;font:16px/1.5 Garamond,serif}.atlas-connection-error button{margin-left:10px}
 /* Accessible city navigator: keep text and controls legible in the light atlas theme. */
 #cityNavigator{background:#faf6eb;border-color:#8c7654;box-shadow:0 5px 18px #35271f30;color:#392719}
-#cityNavigator summary{color:#392719}
+#cityNavigator summary{color:#392719;padding-right:82px}
+#cityNavigator .city-nav-close{position:absolute;top:4px;right:5px;z-index:2;padding:3px 8px;font-size:12px}
 #cityNavigator .city-help,#cityNavigator .city-section-title{color:#5a4525}
 #cityNavigator .city-option{background:#fffdf6;border-color:#9a8058;color:#302012}
 #cityNavigator .city-option:hover{background:#e8ddc5;border-color:#66483a}
@@ -125,6 +126,7 @@ html.a11y-contrast-dark #app button.primary,html.a11y-contrast-dark #app button.
   background:#ffeb00!important;color:#000!important
 }
 html.a11y-contrast-dark #mapbtns #btnCities[aria-expanded="true"]{background:#ffeb00!important;color:#000!important}
+html.a11y-contrast-dark #cityNavigator .city-nav-close{background:#000!important;color:#fff!important;border:2px solid #ffeb00!important}
 html.a11y-contrast-dark #top button.primary,html.a11y-contrast-dark #mapbtns button.on,
 html.a11y-contrast-dark button.on,html.a11y-contrast-dark .pcard.sel,html.a11y-contrast-dark .act.sel,
 html.a11y-contrast-dark .pl.active,html.a11y-contrast-dark .mz.mine{
