@@ -495,7 +495,7 @@ function renderActions() {
     return `<button data-k="${k}" class="${k === UI.tab ? "on" : ""}">${KIND_ZH[k]}${best && best.kind === k ? "★" : ""}<span class="n">${n}</span></button>`;
   }).join("") +
     (fk ? `<button class="filter" id="clearFilter">筛选：${fk.city ? cityZh(fk.city) : fk.link.split("|").map(cityZh).join("—")} ✕</button>` : "") +
-    `<button class="${st.actions.length ? "" : "primary "}passbtn" id="passbtn" title="不执行动作，弃 1 张牌">跳过</button>`;
+    box.innerHTML = `<div class="ct"><div class="t1">Skip</div><div class="t2">Skip your action and discard 1 card</div>${discardHTML()}</div>`;
   if (UI.tab === "DEVELOP" && !UI.filter) { list.innerHTML = devPickerHTML(g.DEVELOP, best); renderConfirm(); return; }
   let items = filtered(g[UI.tab] || []);
   if (UI.tab === "BUILD") items.sort((a, b) => IND_ORDER.indexOf(a.industry) - IND_ORDER.indexOf(b.industry) || a.cost - b.cost);

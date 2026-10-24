@@ -273,7 +273,7 @@ svg.targeting .lk{opacity:.35}
 .dpk.on{border-color:var(--gold);background:#2d2517;color:var(--gold2)}
 .dpk .x2{margin-left:auto;font-size:11px;color:var(--gold2)}
 .pcard.todisc{border-color:#d9776a;box-shadow:0 0 0 2px #d9776a88}
-.pcard.todisc::before{content:"弃";position:absolute;right:3px;top:3px;z-index:2;font:700 10px var(--sans);
+.pcard.todisc::before{content:"Discard";position:absolute;right:3px;top:3px;z-index:2;font:700 10px var(--sans);
   background:#b04a3c;color:#fff;padding:0 4px;border-radius:2px}
 .pcard.nodisc{opacity:.4}
 
