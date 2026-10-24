@@ -1,0 +1,6 @@
+{
+  "windows_ansi_simulation": "pass: /api/board returns all 80 cities in UTF-8",
+  "missing_board_error": "pass: clear JSON error instead of dropped connection",
+  "windows_mime_override": "pass: ES modules served as JavaScript",
+  "python_compilation": "pass"
+}

@@ -1,0 +1,13 @@
+{
+  "original_game": "https://brass.iboardgame.app/",
+  "reference_style": "https://parallelsreading.com/",
+  "original_modules_sha256": {
+    "js/app.js": "279709fcccad945a085e3e6c332000d2bbfbdf7610ae3f631f8509c21c1b50e0",
+    "js/map.js": "10ba51d20f87843524c2052532ddcfefe7dca89a720d1249cb7eb6bfdabbdd6f",
+    "js/art.js": "861d0b693fd7f14ddd8d63f7ed6b9831fff9a30b4ab156dd6a46dec5ac190219",
+    "css/app.css": "e2cf00b9960cc173e9541c60f5c3b4b82280e57c7d807d3e6da59e3dc42937a9",
+    "assets/map.json": "76061c10c9e8b09e7addb5d30020bd20c2b78ccf755623ea00cc6b3815757e33"
+  },
+  "engine": "Original remote API; not included or reimplemented",
+  "changes": "Local English presentation layer, atlas CSS and local API adapter"
+}

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#f5edd8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Brassworld — An Industrial Atlas</title>
+
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/theme/atlas.css">
+<script type="module" src="/theme/english.js"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs id="symbols"></defs></svg>
+<div id="app">
+  <header id="top">
+    <div class="brand">Brassworld</div>
+    <span class="chip" id="eraChip">—</span>
+    <span class="meta" id="roundInfo"></span>
+    <span class="pips" id="pips" title="本回合剩余动作"></span>
+    <span class="spacer"></span>
+    <button id="btnMusic" class="musicbtn" title="背景音乐（M）" aria-label="背景音乐">♪</button>
+    <nav id="menu">
+      <button id="btnNew" class="primary">新开一局</button>
+      <button id="btnHelp">玩法</button>
+      <button id="btnSettings">设置</button>
+    </nav>
+    <button id="btnMenu" class="iconbtn" aria-label="菜单">☰</button>
+  </header>
+
+  <section id="infobar">
+    <div id="players"></div>
+    <div id="markets" class="markets"></div>
+  </section>
+
+  <main id="mapwrap">
+    <svg id="map" aria-label="世界地图"></svg>
+    <div id="hint" class="hide"></div>
+    <div id="mapbtns">
+      <button id="btnWorld" title="全局视图（F）">全局</button>
+      <button id="btnHome" title="定位本土（H）">本土</button>
+      <button id="btnNet" title="仅显示你的网络（可以建造的城市）">网络</button>
+      <button id="btnMine" title="高亮你的产业（I）">我的</button>
+      <button id="btnLog" title="行动记录">记录</button>
+    </div>
+    <div id="tip" class="hide"></div>
+    <aside id="logpanel" class="hide"><div class="lp-head">行动记录<button class="x" id="logClose">✕</button></div><div id="log"></div></aside>
+    <div id="actfeed"></div>
+    <div id="playbar" class="hide"><span id="playwho"></span><span class="spacer"></span>
+      <button id="btnSkip" title="跳过剩余回放，直接看结果（Esc）">跳过 ▸▸</button></div>
+    <div id="banner" class="hide"></div>
+  </main>
+
+  <footer id="dock">
+    <div id="sheetHandle"><span></span></div>
+    <div id="sheetTabs">
+      <button data-pane="hand" class="on">手牌</button>
+      <button data-pane="act">行动<b id="actCount"></b></button>
+      <button data-pane="mat">板件</button>
+      <button data-pane="mkt">市场</button>
+      <button data-pane="log">记录</button>
+    </div>
+    <section id="handPane" class="pane on" data-pane="hand">
+      <div class="sec">手牌 <span class="sub" id="handSub"></span></div>
+      <div id="cards"></div>
+    </section>
+    <section id="actPane" class="pane" data-pane="act">
+      <div id="acttabs"></div>
+      <div id="confirm" class="hide"></div>
+      <div id="actlist"></div>
+    </section>
+    <section id="matPane" class="pane" data-pane="mat">
+      <div class="sec">板件 · 下一块 <button id="btnMat" class="mini">全部板件</button></div>
+      <div id="mat"></div>
+    </section>
+    <section id="mktPane" class="pane mobile-only" data-pane="mkt"><div id="markets2" class="markets"></div></section>
+    <section id="logPane" class="pane mobile-only" data-pane="log"><div id="log2"></div></section>
+  </footer>
+</div>
+<div id="cardpop" class="hide"></div>
+<div id="fx"></div>
+<div id="toasts"></div>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

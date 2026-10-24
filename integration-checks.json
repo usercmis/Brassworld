@@ -1,0 +1,32 @@
+[
+  {
+    "path": "/api/state",
+    "ok": true,
+    "round": null,
+    "version": null
+  },
+  {
+    "path": "/api/new",
+    "ok": true,
+    "round": 1,
+    "version": 1
+  },
+  {
+    "path": "/api/action",
+    "ok": true,
+    "round": 2,
+    "version": 2
+  },
+  {
+    "path": "/api/pass",
+    "ok": true,
+    "round": 2,
+    "version": 3
+  },
+  {
+    "path": "/api/load",
+    "ok": true,
+    "round": 2,
+    "version": 4
+  }
+]
