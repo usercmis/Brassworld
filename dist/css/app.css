@@ -566,3 +566,33 @@ table.score tr.me td{background:rgba(201,161,90,.08)}
 #playbar span,#playbar button{white-space:nowrap}
 #playwho{min-width:0;overflow:hidden}
 #playwho > span:not(.pstep):not(.ptap){overflow:hidden;text-overflow:ellipsis;max-width:9em}
+
+
+.strategy-advisor {
+  background: #f5edd8;
+  border: 2px solid #b99a63;
+  border-left: 5px solid #8b6b3e;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  color: #4b3525;
+  font-size: 14px;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
+  grid-column: 1 / -1;
+}
+
+.strategy-advisor strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.strategy-advisor p {
+  margin: 0;
+}
+
+.strategy-advisor p {
+  white-space: pre-line;
+}
