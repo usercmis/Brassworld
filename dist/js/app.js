@@ -1681,11 +1681,19 @@ function bindUI() {
   const cityNavigator = $("#cityNavigator"), cityToggle = $("#btnCities");
   if (cityNavigator && cityToggle) {
     const syncCityToggle = () => cityToggle.setAttribute("aria-expanded", String(cityNavigator.open));
+    const closeCityNavigator = () => {
+      cityNavigator.open = false; syncCityToggle(); cityToggle.focus();
+    };
     cityToggle.onclick = () => {
       cityNavigator.open = !cityNavigator.open; syncCityToggle();
       if (cityNavigator.open) cityNavigator.querySelector("summary")?.focus();
     };
     cityNavigator.addEventListener("toggle", syncCityToggle);
+    $("#btnCitiesClose")?.addEventListener("click", closeCityNavigator);
+    cityNavigator.addEventListener("keydown", e => {
+      if (e.key !== "Escape") return;
+      e.preventDefault(); e.stopPropagation(); closeCityNavigator();
+    });
   }
   $("#btnWorld").onclick = () => map.fitWorld();
   $("#btnHome").onclick = () => { if (S && S.started) map.focusRegion(me().home); };
