@@ -159,7 +159,7 @@ function renderPlayers(st, bump = {}) {
       ${avatarHTML(p.avatar, PCOL[p.id], isMobile() ? 30 : 40)}
       <div class="body">
         <div class="r1"><span class="nm" style="color:${PCOL[p.id]}">${p.name}</span>
-          <span class="vp ${bump[p.id] ? "bump" : ""}" title="胜利点">${p.vp}</span></div>
+          <span class="vp ${bump[p.id] ? "bump" : ""}" title="victory point">${p.vp}</span></div>
         <div class="r2"><span>£<b class="money">${p.money}</b></span><span>收入 <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
         <div class="r3">${p.levelZh ? `<span class="lv">${p.levelZh}</span>` : ""}<span class="home">${p.homeZh}</span>${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="已与 ${pname(st, i)} 互通"></span>`).join("")}</div>
       </div></div>`;
@@ -180,7 +180,7 @@ function layoutInfobar() {
 function marketRow(m, kind) {
   // 价位条：每一档一格，按存量填充；宽度随窗口伸缩（以前一块一块画方块，窗口一窄就出界）
   const lad = m.ladder.map(l => `<i title="£${l.price}：${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
-  return `<div class="mrow" title="${kind === "coal" ? "煤" : "铁"} ${m.count}/${m.capacity}，现价 £${m.price}">${cubeHTML(kind, 12)}` +
+  return `<div class="mrow" title="${kind === "coal" ? "coal" : "iron"} ${m.count}/${m.capacity}，现价 £${m.price}">${cubeHTML(kind, 12)}` +
     `<span class="mladder ${kind}">${lad}</span><b>£${m.price}</b></div>`;
 }
 function marketCubes(m, kind) {
@@ -204,7 +204,7 @@ function renderMarkets(st) {
     const merged = size[grp[z]] > 1;
     const mates = merged ? Object.keys(grp).filter(k => grp[k] === grp[z] && k !== z).map(k => ZONE_ZH[k]).join("、") : "";
     const tip = `${ZONE_ZH[z]}市场｜煤 ${m.coal.count}/${m.coal.capacity}，现价 £${m.coal.price}｜铁 ${m.iron.count}/${m.iron.capacity}，现价 £${m.iron.price}｜` +
-      `售空后按 £${m.coal.outside}/£${m.iron.outside} 外购` + (mine.has(z) ? "｜网络可达" : "") +
+      `售空后按 £${m.coal.outside}/£${m.iron.outside} 外购` + (mine.has(z) ? "｜Network could reach" : "") +
       (merged ? `｜已与${mates}合并` : "");
     return `<div class="mz ${mine.has(z) ? "mine" : ""} ${merged ? "merged" : ""}" data-zone="${z}" title="${tip}">
       <div class="zn">${ZONE_ZH[z]}${mine.has(z) ? " ●" : ""}${merged ? " ⛓" : ""}</div>
@@ -227,8 +227,8 @@ function renderHand(st) {
     const dspec = (UI.sel !== null || UI.passMode) ? discardSpec() : null;
     const dcls = dspec ? (UI.discard.includes(ci) ? "todisc" : dspec.allowed.includes(ci) ? "candisc" : "nodisc") : "";
     return `<div class="pcard ${isInd ? "" : "region"} ${isWild ? "wild" : ""} ${dead ? "dead" : ""} ${UI.card === ci ? "sel" : ""} ${dcls}"
-      data-ci="${ci}" tabindex="0" title="${c.label}${dead ? "（当前不可用）" : ""}">
-      <span class="kind">${isWild ? "万用" : isInd ? "产业" : "区域"}</span>
+      data-ci="${ci}" tabindex="0" title="${c.label}${dead ? "（Currently Unavailable）" : ""}">
+      <span class="kind">${isWild ? "万用" : isInd ? "Industry" : "Area"}</span>
       <div class="art" style="${artCSS(cardArt(c))}"></div><div class="nm">${c.label}</div></div>`;
   }).join("");
   const usable = tg.filter((t, i) => st.hand[i].kind === "WILD" || t.size).length;
@@ -253,9 +253,9 @@ const zoneMkt = { BRITAIN: "不列颠市场", EUROPE: "欧陆市场", AMERICAS: 
 function costParts(t, e) {
   // 「£17 板件 + 亚太市场煤×1 £6 = £23」
   const parts = [`£${t.cost} 板件`];
-  (e.coalFrom || []).forEach(s => parts.push(`${cubeHTML("coal", 11)}${s.owner === me(S).id ? "自有" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} 免费`));
+  (e.coalFrom || []).forEach(s => parts.push(`${cubeHTML("coal", 11)}${s.owner === me(S).id ? "own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} free`));
   if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "市场"}×${e.coalMkt} £${e.coalCash}`);
-  (e.ironFrom || []).forEach(s => parts.push(`${cubeHTML("iron", 11)}${s.owner === me(S).id ? "自有" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} 免费`));
+  (e.ironFrom || []).forEach(s => parts.push(`${cubeHTML("iron", 11)}${s.owner === me(S).id ? "own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} free`));
   if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "市场"}×${e.ironMkt} £${e.ironCash}`);
   return parts.join(" + ") + (parts.length > 1 ? ` = £${e.money}` : "");
 }
@@ -268,24 +268,24 @@ function buildStatus(cityId, ind) {
   const inNet = !st.reach.length || st.reach.includes(cityId);
   const hasReg = st.hand.some(h => (h.kind === "REGION" && h.v === c.region) || (h.kind === "WILD" && h.v === "REGION"));
   const hasInd = st.hand.some(h => (h.kind === "INDUSTRY" && h.v.split("+").includes(ind)) || (h.kind === "WILD" && h.v === "INDUSTRY"));
-  if (!inNet && !hasReg) return { ok: false, why: `不在网络内：需「${c.regionZh}」区域牌` };
+  if (!inNet && !hasReg) return { ok: false, why: `is not in the network：need「${c.regionZh}」card` };
   const e = (info.cities || []).find(x => x.city === cityId);
-  if (!e) return { ok: false, why: "无未被占用的对应格位" };
+  if (!e) return { ok: false, why: "no unoccupied corresponding cells" };
   if (e.money === null) return { ok: false, why: e.why };
   const cash = me(st).money;
-  if (!hasReg && !hasInd) return { ok: false, e, why: `缺牌：需「${c.regionZh}」或「${B.industryZh[ind]}」` };
+  if (!hasReg && !hasInd) return { ok: false, e, why: `need cards：need「${c.regionZh}」or「${B.industryZh[ind]}」` };
   if (e.money > cash) return { ok: false, e, short: true,
-    why: `资金不足：差 <b>£${e.money - cash}</b>${canLoan() ? "（可贷款 £30）" : ""}` };
+    why: `not enough money：need <b>£${e.money - cash}</b>${canLoan() ? "（loans available £30）" : ""}` };
   return { ok: true, e };
 }
 function tileLines(ind, t) {
   const need = [];
   for (let i = 0; i < t.coal; i++) need.push(cubeHTML("coal", 12));
   for (let i = 0; i < t.iron; i++) need.push(cubeHTML("iron", 12));
-  const give = [`<b>${t.vp}</b> 分`, `收入 +${t.income}`, `连线 ${t.linkVp}`];
+  const give = [`<b>${t.vp}</b> 分`, `income +${t.income}`, `连线 ${t.linkVp}`];
   const note = ["COAL", "IRON"].includes(ind) ? `建成产出 ${t.produces} 块，售予市场`
     : ind === "PROV" ? "产出啤酒：帆船时代建成放 1 桶，蒸汽时代建成放 2 桶"
-      : t.sellProv ? `销售耗啤酒 ×${t.sellProv}，须连通收购此货、已开张的贸易港` : "销售不耗啤酒，须连通收购此货、已开张的贸易港";
+      : t.sellProv ? `Selling prov ×${t.sellProv}，须连通收购此货、已开张的贸易港` : "The sale does not consume beer; it requires connections to an established trading port that can purchase this goods.";
   return `<div class="r"><span class="k">造价</span><b style="color:var(--gold2)">£${t.cost}</b>${need.length ? " + " + need.join("") : " · 无需煤铁"}</div>
     <div class="r"><span class="k">收益</span>${give.join(" · ")}</div>
     <div class="r"><span class="k">备注</span>${note}</div>`;
@@ -300,7 +300,7 @@ function cityLine(cityId, ind) {
 function cardPopHTML(card) {
   const st = S;
   if (card.kind === "WILD")
-    return `<div class="h"><b>${card.label}</b></div><div class="r">${card.v === "REGION" ? "视为任意区域：可建在任一城市，不必在网络内" : "视为任意产业：须建在网络内"}；本时代结束作废。</div>`;
+    return `<div class="h"><b>${card.label}</b></div><div class="r">${card.v === "REGION" ? "treated as any area：could be built in any cities，not necessary in the network" : "treated as any industry; must be built within the network"}；本时代结束作废。</div>`;
   if (card.kind === "INDUSTRY") {
     const inds = card.v.split("+");
     if (inds.length > 1)       // 棉纺厂/制造厂共用一种牌：两种产业各列一段
@@ -464,7 +464,7 @@ function renderActions() {
       <span class="body"><span class="tx">${actTitle(a)}</span>
         <span class="gain">${actGain(a)}</span>
         ${srcHTML(a) ? `<span class="src">${srcHTML(a)}</span>` : ""}</span>
-      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "£" + a.cost : "免费"}</span></button>`).join("")
+      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "£" + a.cost : "free"}</span></button>`).join("")
     : `<div class="empty">${UI.filter ? "此处无该类动作" : "无可执行动作"}</div>`;
   renderConfirm();
 }
