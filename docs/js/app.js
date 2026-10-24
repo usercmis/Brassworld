@@ -8,8 +8,8 @@ const $$ = s => [...document.querySelectorAll(s)];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const ZONE_ZH = { BRITAIN: "Britain", EUROPE: "Europe", AMERICAS: "Americas", ASIAPAC: "Asiapac" };
 const KIND_ORDER = ["BUILD", "NETWORK", "SELL", "DEVELOP", "LOAN", "SCOUT"];
-const KIND_ZH = { BUILD: "建造", NETWORK: "连接", SELL: "销售", DEVELOP: "开发", LOAN: "贷款", SCOUT: "侦查" };
-const RES_ZH = { coal: "煤", iron: "铁", prov: "啤酒" };
+const KIND_ZH = { BUILD: "Build", NETWORK: "Connect", SELL: "Sell", DEVELOP: "Develop", LOAN: "Loan", SCOUT: "Scout" };
+const RES_ZH = { coal: "Coal", iron: "Iron", prov: "Prov" };
 const isMobile = () => matchMedia("(max-width: 760px)").matches;
 
 // ---------- 设置（本机偏好，存 localStorage） ----------
