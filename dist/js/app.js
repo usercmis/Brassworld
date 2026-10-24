@@ -1289,8 +1289,13 @@ async function bgmStart() {
     if (!SET.music) return;                                   // 下载期间被关掉了
     if (!BGM.src) {
       const s = BGM.ctx.createBufferSource();
-      s.buffer = BGM.buf; s.loop = true; s.loopStart = BGM_PAD; s.loopEnd = BGM_PAD + BGM_LOOP;
-      s.connect(BGM.gain); s.start(0, BGM_PAD); BGM.src = s;
+      s.buffer = BGM.buf;
+s.loop = true;
+s.loopStart = 0;
+s.loopEnd = BGM.buf.duration;
+s.connect(BGM.gain);
+s.start(0);
+BGM.src = s;
     }
     bgmRamp(+SET.vol || 0.35, 2.5);
   } catch (e) { }
