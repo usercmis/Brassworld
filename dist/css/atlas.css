@@ -61,8 +61,8 @@ button:focus-visible,.pcard:focus-visible,.act:focus-visible{outline-color:#8050
 .atlas-connection-error{position:fixed;z-index:10000;left:50%;bottom:25px;transform:translateX(-50%);width:min(640px,92vw);padding:18px 22px;background:#faf3df;color:#78432e;border:1px solid #ae8060;box-shadow:0 10px 40px #46311f33;font:16px/1.5 Garamond,serif}.atlas-connection-error button{margin-left:10px}
 /* Accessible city navigator: keep text and controls legible in the light atlas theme. */
 #cityNavigator{background:#faf6eb;border-color:#8c7654;box-shadow:0 5px 18px #35271f30;color:#392719}
-#cityNavigator summary{color:#392719;padding-right:82px}
-#cityNavigator .city-nav-close{position:absolute;top:4px;right:5px;z-index:2;padding:3px 8px;font-size:12px}
+#cityNavigator summary{position:sticky;top:0;z-index:5;background:inherit;color:#392719;padding-right:82px}
+#cityNavigator .city-nav-close{position:sticky;top:36px;align-self:flex-end;z-index:6;padding:3px 8px;margin-bottom:8px;font-size:12px}
 #cityNavigator .city-help,#cityNavigator .city-section-title{color:#5a4525}
 #cityNavigator .city-option{background:#fffdf6;border-color:#9a8058;color:#302012}
 #cityNavigator .city-option:hover{background:#e8ddc5;border-color:#66483a}
@@ -164,4 +164,27 @@ html.a11y-contrast-dark .modal button.on,html.a11y-contrast-dark .modal button.p
 html.a11y-contrast-dark #app .modal button.on,html.a11y-contrast-dark #app .modal button.primary{color:#000!important}
 html.a11y-contrast-dark :is(button,.pcard,.act,#cityNavigator summary):focus-visible{
   outline:3px solid #ffeb00!important;outline-offset:3px;box-shadow:0 0 0 5px #000!important
+}
+/* Make the Larger setting visibly affect the whole interface, including theme-sized controls. */
+html.a11y-large-text body{font-size:18px!important;line-height:1.55!important}
+html.a11y-large-text #app .modal .sub{font-size:18px!important;line-height:1.5!important}
+html.a11y-large-text #app :is(button,.brand,.chip,.meta,.pl .nm,.pl .r2,.pl .r3,.pl .lv,.pl .vp,
+  .mz .zn,.sec,.sub,.pcard .kind,.pcard .nm,#acttabs button,.act .tx,.act .gain,.act .src,.act .price,
+  .mt,.mrow,.lp-head,.le,.toast,.field>label,.seg .hint,.modal .sub,.modal h2,
+  .city-help,.city-section-title,.city-option){
+  font-size:max(18px,1.15em)!important;line-height:1.4!important
+}
+html.a11y-large-text #app :is(#mapbtns button,#confirm,#log,#log2,#tip,#hint,#playbar,#banner,#cityNavigator summary){
+  font-size:max(18px,1.15em)!important;line-height:1.4!important
+}
+html.a11y-large-text #app .pl .vp{font-size:max(27px,1.15em)!important}
+html.a11y-large-text #app .brand{font-size:max(28px,1.15em)!important}
+html.a11y-large-text #app .modal h2{font-size:max(32px,1.15em)!important}
+html.a11y-large-text .pl{min-height:94px;padding:10px}
+html.a11y-large-text #mapbtns{flex-wrap:wrap;max-width:min(620px,calc(100% - 24px))}
+html.a11y-large-text #cards{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))}
+html.a11y-large-text #cards .pcard{width:auto;height:116px}
+html.a11y-large-text #cards .pcard .nm{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+html.a11y-large-text .act .tx,html.a11y-large-text .act .gain,html.a11y-large-text .act .src{
+  white-space:normal!important;overflow:visible!important;text-overflow:clip!important
 }
