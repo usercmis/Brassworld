@@ -51,7 +51,7 @@ async function boot() {
     map.focusRegion(me().home);
   } else if (localSave() && await resumeLocal(true)) {
     // 服务器重启过、会话没了：有本地存档就直接续上，不用玩家再点一次
-    toast("已恢复上一局");
+    toast("Recovered last game");
   } else {
     map.fitWorld();
     showNewGame();
@@ -154,7 +154,7 @@ function renderPlayers(st, bump = {}) {
   $("#players").innerHTML = ps.map(p => {
     const links = (st.linkedPairs || []).filter(k => k.includes(p.id)).map(k => k[0] === p.id ? k[1] : k[0]);
     return `<div class="pl ${p.id === st.active ? "active" : ""} ${p.isMe ? "me" : ""}" data-p="${p.id}"
-      title="${p.name}｜板件 ${p.tiles} · 连线 ${p.links} · 手牌 ${p.hand}｜点击查看全部板件">
+      title="${p.name}｜tiles ${p.tiles} · links ${p.links} · hands ${p.hand}｜click to check all the tiles">
       <span class="order">${order.indexOf(p.id) + 1}</span>
       ${avatarHTML(p.avatar, PCOL[p.id], isMobile() ? 30 : 40)}
       <div class="body">
@@ -203,9 +203,9 @@ function renderMarkets(st) {
   const html = Object.entries(st.markets).map(([z, m]) => {
     const merged = size[grp[z]] > 1;
     const mates = merged ? Object.keys(grp).filter(k => grp[k] === grp[z] && k !== z).map(k => ZONE_ZH[k]).join("、") : "";
-    const tip = `${ZONE_ZH[z]}市场｜煤 ${m.coal.count}/${m.coal.capacity}，现价 £${m.coal.price}｜铁 ${m.iron.count}/${m.iron.capacity}，现价 £${m.iron.price}｜` +
+    const tip = `${ZONE_ZH[z]}market｜coal ${m.coal.count}/${m.coal.capacity}，current price £${m.coal.price}｜iron ${m.iron.count}/${m.iron.capacity}，现价 £${m.iron.price}｜` +
       `售空后按 £${m.coal.outside}/£${m.iron.outside} 外购` + (mine.has(z) ? "｜Network could reach" : "") +
-      (merged ? `｜已与${mates}合并` : "");
+      (merged ? `｜has already combined with${mates}` : "");
     return `<div class="mz ${mine.has(z) ? "mine" : ""} ${merged ? "merged" : ""}" data-zone="${z}" title="${tip}">
       <div class="zn">${ZONE_ZH[z]}${mine.has(z) ? " ●" : ""}${merged ? " ⛓" : ""}</div>
       ${marketRow(m.coal, "coal")}${marketRow(m.iron, "iron")}</div>`;
@@ -232,7 +232,7 @@ function renderHand(st) {
       <div class="art" style="${artCSS(cardArt(c))}"></div><div class="nm">${c.label}</div></div>`;
   }).join("");
   const usable = tg.filter((t, i) => st.hand[i].kind === "WILD" || t.size).length;
-  $("#handSub").textContent = st.hand.length ? `可用 ${usable}/${st.hand.length}` : "";
+  $("#handSub").textContent = st.hand.length ? `usable ${usable}/${st.hand.length}` : "";
 }
 // 这张牌能在哪建：区域牌 = 该区域城市（仍须在网络内）；产业牌 = 网络内有空格能建这种产业的城市
 function cardTargets(card) {
@@ -249,14 +249,14 @@ function cardTargets(card) {
     (inds === null || sl.some(x => inds.includes(x))) && !(taken[c.id] && taken[c.id].has(i)))).map(c => c.id));
 }
 // ---- 为什么能 / 不能建：服务端给出每种产业下一块的规格和每座城的实际总价（buildInfo） ----
-const zoneMkt = { BRITAIN: "不列颠市场", EUROPE: "欧陆市场", AMERICAS: "美洲市场", ASIAPAC: "亚太市场" };
+const zoneMkt = { BRITAIN: "Britain market", EUROPE: "Europe market", AMERICAS: "Americas marktet", ASIAPAC: "Asiapac market" };
 function costParts(t, e) {
   // 「£17 板件 + 亚太市场煤×1 £6 = £23」
   const parts = [`£${t.cost} 板件`];
   (e.coalFrom || []).forEach(s => parts.push(`${cubeHTML("coal", 11)}${s.owner === me(S).id ? "own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} free`));
-  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "市场"}×${e.coalMkt} £${e.coalCash}`);
+  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "market"}×${e.coalMkt} £${e.coalCash}`);
   (e.ironFrom || []).forEach(s => parts.push(`${cubeHTML("iron", 11)}${s.owner === me(S).id ? "own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} free`));
-  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "市场"}×${e.ironMkt} £${e.ironCash}`);
+  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "market"}×${e.ironMkt} £${e.ironCash}`);
   return parts.join(" + ") + (parts.length > 1 ? ` = £${e.money}` : "");
 }
 function canLoan() { return S && S.actions && S.actions.some(a => a.kind === "LOAN"); }
