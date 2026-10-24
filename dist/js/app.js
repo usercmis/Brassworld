@@ -426,6 +426,34 @@ function filtered(list) {
   return list.filter(a => (f.city && (a.city === f.city || (a.link && a.link.includes(f.city)) || (a.second && a.second.includes(f.city)))) ||
     (f.link && [a.link, a.second].filter(Boolean).some(k => [...k].sort().join("|") === f.link)));
 }
+function explainMove(action) {
+  if (!action) return "";
+
+  switch (action.kind) {
+    case "BUILD":
+      return "Building an industry can increase your income and create future scoring opportunities.";
+
+    case "NETWORK":
+      return "Expanding your network can unlock new cities and help connect your industries.";
+
+    case "DEVELOP":
+      return "Developing removes lower-level industry tiles, helping you access more advanced industries.";
+
+    case "SELL":
+      return "Selling eligible goods can increase your income and score points.";
+
+    case "LOAN":
+      return "Taking a loan gives you more money to invest, but reduces your income.";
+
+    case "SCOUT":
+      return "Scouting lets you discard 3 cards to gain wild cards, giving you more flexibility when building industries in different regions.";
+    
+    default:
+      return "This move may help improve your position. Check its cost and effects before choosing.";
+  }
+}
+
+
 function renderActions() {
   const st = S;
   const tabs = $("#acttabs"), list = $("#actlist");
@@ -438,6 +466,16 @@ function renderActions() {
   if (!myTurn) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">等待其他玩家…</div>`; return; }
   const kinds = KIND_ORDER.filter(k => g[k]);
   const best = st.actions.find(a => a.best);
+  const player = me(st);
+
+  const advisorMessage = best
+    ? `★ Strategy Advisor
+      Current Money: £${player.money}
+      Recommended Action: ${best.kind}
+      Action Cost: £${best.cost ?? 0}
+
+      ${explainMove(best)}`
+    : "";
   if (best && UI.bestSeen !== st.ver) { UI.bestSeen = st.ver; UI.tab = best.kind; }   // 推荐走法所在的标签页先打开
   if (!UI.tab || !g[UI.tab]) UI.tab = kinds[0];
   let fk = null;
@@ -466,7 +504,18 @@ function renderActions() {
         ${srcHTML(a) ? `<span class="src">${srcHTML(a)}</span>` : ""}</span>
       <span class="price ${a.cost ? "" : "free"}">${a.cost ? "£" + a.cost : "免费"}</span></button>`).join("")
     : `<div class="empty">${UI.filter ? "此处无该类动作" : "无可执行动作"}</div>`;
-  renderConfirm();
+  if (advisorMessage) {
+    list.insertAdjacentHTML(
+      "afterbegin",
+      `<div class="strategy-advisor" role="status">
+        <strong>💡 Recommended Move</strong>
+        <p>${advisorMessage}</p>
+      </div>`
+    );
+  }
+
+    renderConfirm();
+
 }
 // ---------- 开发（伯明翰规则：一次移除 1–2 块，每块 1 铁；同一产业可移除两块） ----------
 function devKey(list) { return [...list].sort().join("+"); }
