@@ -1,4 +1,4 @@
-// 《工业革命：世界》前端主程序
+// frontend main 
 import { SYMBOLS, PCOL, IND_ART, artCSS, regionArt, iconHTML, cubeHTML, avatarHTML, AVATARS, AVATAR_ZH,
   ROMAN, BONUS_FULL, BONUS_SHORT, IND_ORDER } from "./art.js";
 import { MapView } from "./map.js";
@@ -6,7 +6,7 @@ import { MapView } from "./map.js";
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const ZONE_ZH = { BRITAIN: "不列颠", EUROPE: "欧陆", AMERICAS: "美洲", ASIAPAC: "亚太" };
+const ZONE_ZH = { BRITAIN: "Britain", EUROPE: "Europe", AMERICAS: "Americas", ASIAPAC: "Asiapac" };
 const KIND_ORDER = ["BUILD", "NETWORK", "SELL", "DEVELOP", "LOAN", "SCOUT"];
 const KIND_ZH = { BUILD: "建造", NETWORK: "连接", SELL: "销售", DEVELOP: "开发", LOAN: "贷款", SCOUT: "侦查" };
 const RES_ZH = { coal: "煤", iron: "铁", prov: "啤酒" };
@@ -80,11 +80,11 @@ function localSave() {
 async function resumeLocal(quiet) {
   const ls = localSave(); if (!ls) return false;
   const st = await api("/api/load", { save: ls.save });
-  if (!st.started) { toast(st.error || "存档无法读取"); return false; }
+  if (!st.started) { toast(st.error || "Archive can't be read"); return false; }
   PREV_CLEAR();
   await applyState(st, false);
   map.focusRegion(me().home);
-  if (!quiet) toast("已读取本地存档：" + st.eraZh + " 第 " + st.round + " 轮");
+  if (!quiet) toast("Local archive has been read：" + st.eraZh + " The " + st.round + " turn");
   return true;
 }
 function PREV_CLEAR() { S = null; D = null; UI.sel = null; UI.filter = null; }
@@ -94,21 +94,21 @@ async function submit(path, body) {
   if (UI.busy || UI.playing) return;
   UI.busy = true; document.body.classList.add("busy");
   // 服务器在算 AI 的回合时给个提示，否则界面看起来像卡住了
-  const think = setTimeout(() => { $("#playwho").innerHTML = "对手思考中…"; $("#playbar").classList.remove("hide"); }, 350);
+  const think = setTimeout(() => { $("#playwho").innerHTML = "Opponent is taking action…"; $("#playbar").classList.remove("hide"); }, 350);
   try {
     let r = await api(path, Object.assign({ v: S ? S.ver : undefined }, body));
     if (r && r.started === false && localSave()) {
       // 服务端重启过、会话丢了：用本地存档恢复（刚才这一步没执行，玩家重点一次即可）
       await resumeLocal(true);
-      toast("会话已恢复，请重新操作");
+      toast("Recovered，please try again");
       return;
     }
-    if (r.stale) toast("局面已更新，请重新选择");
+    if (r.stale) toast("Updated，please choose again");
     if (r.error) toast(r.error);
     UI.sel = null; UI.filter = null; UI.card = null; UI.passMode = false; UI.discard = [];
     await applyState(r, true);
   } catch (e) {
-    console.error(e); toast("网络错误：" + e.message);
+    console.error(e); toast("Network error：" + e.message);
   } finally {
     clearTimeout(think);
     if (!UI.playing) $("#playbar").classList.add("hide");
@@ -143,7 +143,7 @@ function renderAll() {
 
 function renderTop(st) {
   $("#eraChip").textContent = st.eraZh;
-  $("#roundInfo").textContent = `第 ${st.round} 轮 · 牌库 ${st.deck}`;
+  $("#roundInfo").textContent = `The ${st.round} turn · 牌库 ${st.deck}`;
   const myTurn = !st.over && st.active === me(st).id && !UI.playing;
   $("#pips").innerHTML = [...Array(st.actionsTotal || 2).keys()].map(i => `<span class="pip ${myTurn && i < st.actionsLeft ? "" : "off"}"></span>`).join("");
 }
@@ -410,11 +410,11 @@ function actGain(a) {
     if (a.mktSale) bits.push(mktSaleText(a.mktSale, true));
     return bits.join(" · ");
   }
-  if (a.kind === "SELL") return `时代末 ${a.vp} 分 · 收入 +${a.income}` + (a.hub ? ` · 经${a.hub.zh}` + (a.hub.bonus ? `（港口奖励：${BONUS_FULL[a.hub.bonus]}）` : "") : "") +
+  if (a.kind === "SELL") return `at the end of generation ${a.vp} 分 · Earn +${a.income}` + (a.hub ? ` · 经${a.hub.zh}` + (a.hub.bonus ? `（港口奖励：${BONUS_FULL[a.hub.bonus]}）` : "") : "") +
     (a.hubProv ? ` · 港内啤酒 ×${a.hubProv}` : "");
-  if (a.kind === "NETWORK") return (isSeaLink(a.link) ? "海运" : "陆路") + (a.second ? " · 双铺" : "");
+  if (a.kind === "NETWORK") return (isSeaLink(a.link) ? "Sea Transport" : "Land Transport") + (a.second ? " · 双铺" : "");
   if (a.kind === "LOAN") return "收入 −3 级";
-  if (a.kind === "DEVELOP") return `移除 ${(a.dev || [a]).length} 块板件，每块 1 铁`;
+  if (a.kind === "DEVELOP") return `remove ${(a.dev || [a]).length} 块板件，每块 1 铁`;
   return "万用牌视为任意区域 / 产业";
 }
 function groupActs() {
@@ -571,7 +571,7 @@ function showMine(st, fit) {
   map.setTargets(ids.length ? ids : null, "mine");
   $("#map").classList.toggle("showmine", ids.length > 0);
   if (fit && ids.length) map.fitCities(ids, 1.4, 14);
-  if (!ids.length && fit) toast("你在地图上还没有产业");
+  if (!ids.length && fit) toast("You have no industry on your map");
 }
 function baseTargets() {
   if (UI.mine && S && S.started) { showMine(V() || S, false); return; }
@@ -631,7 +631,7 @@ function renderConfirm() {
     box.classList.remove("hide"); return;
   }
   if (!a) { box.classList.add("hide"); return; }
-  const cost = a.cost ? `£${a.cost}` : "免费";
+  const cost = a.cost ? `£${a.cost}` : "Free";
   const detail = [];
   if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`板件 £${a.base}`);
   if (a.mktCash && a.kind !== "DEVELOP") detail.push(`购料 £${a.mktCash}`);
@@ -763,11 +763,11 @@ function renderHint() {
     const sell = st.actions.filter(a => a.kind === "SELL").length;
     const dead = st.placed.filter(p => p.owner === m.id && !p.flipped && ["COTTON", "MFG", "LUX"].includes(p.industry)).length;
     if (!myTurn) h = "";
-    else if (!st.actions.length) h = "无可执行动作，只能跳过";
-    else if (sell) h = `${sell} 件货物可销售`;
+    else if (!st.actions.length) h = "No available action，skip";
+    else if (sell) h = `${sell} goods to sell`;
     else if (!hubs) h = "网络未连通开张的贸易港：无法销售，也无法从市场购煤。贸易港须有连线接入才开张";
     else if (dead >= 2) h = `${dead} 件货物未售出，时代末不计分`;
-    else if (m.money < 6) h = "现金不足：收入低时贷款代价最小";
+    else if (m.money < 6) h = "no enough money：收入低时贷款代价最小";
     else if (st.deck < 12 && st.era === "E1") h = "帆船时代即将结束：Ⅰ级板件与全部连线将被清除";
     else {
       const unlinked = st.players.filter(q => !q.isMe && !(st.linkedPairs || []).some(k => k.includes(m.id) && k.includes(q.id)));
@@ -790,7 +790,7 @@ function cityTip(id) {
       const res = t.resources && ["COAL", "IRON", "PROV"].includes(t.industry)
         ? ` · 存货 ${cubeHTML(t.industry === "COAL" ? "coal" : t.industry === "IRON" ? "iron" : "prov", 11)}×${t.resources}` : "";
       return `<div class="row" style="color:${PCOL[t.owner]}">${iconHTML(t.industry, 13, PCOL[t.owner])} ${B.industryZh[t.industry]}${ROMAN[t.level]}
-        <span class="sl">${t.flipped ? "已翻面" : "未翻面"} · ${pname(st, t.owner)}${res}</span></div>`;
+        <span class="sl">${t.flipped ? "flipped" : "not flipped"} · ${pname(st, t.owner)}${res}</span></div>`;
     }
     return `<div class="row sl">${s.map(x => iconHTML(x, 12, "#8f826a") + B.industryZh[x]).join(" / ")} · 未被占用</div>`;
   }).join("");
@@ -818,7 +818,7 @@ function cityTip(id) {
 function linkTip(key) {
   const [a, b] = key.split("|"), l = B.links.find(x => [x.a, x.b].sort().join("|") === key); if (!l) return;
   const st = V(), bl = (st.builtLinks || []).find(x => [x.a, x.b].sort().join("|") === key);
-  const era = l.era === "E1" ? "仅帆船时代" : l.era === "E2" ? "仅蒸汽时代" : "两个时代";
+  const era = l.era === "E1" ? "仅帆船时代" : l.era === "E2" ? "Steam Only" : "两个时代";
   const cost = B.linkCost[`${st.era}_${l.sea ? "sea" : "land"}`];
   let h = `<b>${cityZh(a)} — ${cityZh(b)}</b> <span class="sl">${l.sea ? "海运" : "陆路"} · ${era}</span>`;
   if (bl) h += `<div class="row" style="color:${PCOL[bl.owner]}">${pname(st, bl.owner)} 已建成</div>`;
@@ -980,7 +980,7 @@ async function playOne(ev, final) {
     return yourTurnFx(final.actionsLeft);
   }
   if (ev.t === "pass") {
-    D.log.push({ who: pname(D, ev.p), text: "跳过", _new: 1 }); renderLog(D);
+    D.log.push({ who: pname(D, ev.p), text: "Skip", _new: 1 }); renderLog(D);
     if (ev.p === me(D).id) return sleep(DUR(500));
     UI.stepN += 1;
     const card = actFeed(ev.p, "跳过", "", SET.step);
@@ -1072,7 +1072,7 @@ async function playOne(ev, final) {
   if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+£" : "−£") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
   const di = (ev.dincome || {})[pid];
   if (di) setTimeout(() => floatText(screenOfPlayer(pid, ".r2"), `收入 ${di > 0 ? "+" : ""}${di}`, di > 0 ? "#b9e3a7" : "#f09a8a"), DUR(260));
-  if (ev.kind === "SELL") floatText(tgt, "卖出！", "#ffe39a");
+  if (ev.kind === "SELL") floatText(tgt, "Sell！", "#ffe39a");
   // 煤铁建成立刻卖给市场：方块从板件飞回市场
   if (ev.kind === "BUILD" && ["COAL", "IRON"].includes(ev.industry)) {
     const after = (ev.after || []).find(t => t.city === ev.city && t.slot === ev.slot);
@@ -1082,7 +1082,7 @@ async function playOne(ev, final) {
   Object.entries(ev.dmoney || {}).forEach(([op, v]) => {       // 被取用资源的对手也有反应
     if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), "#b9e3a7");
   });
-  (ev.notes || []).forEach(n => { if (!n.startsWith("取用")) toast(n); });
+  (ev.notes || []).forEach(n => { if (!n.startsWith("Use")) toast(n); });
   if (!isMe && SET.step && !UI.skip && !document.hidden) {
     await sleep(DUR(450));                          // 飘字、方块先播完
     map.preview(ev, col);                           // 停住时继续标出这一步动了哪里、资源从哪来
@@ -1293,9 +1293,9 @@ function showNewGame() {
   const d = modal(`<h2>工业革命 · 世界</h2>
     <div class="sub">Brass: Birmingham 同人世界地图 · 80 城 · 21 区域 · 4 人局（你与 3 个 AI）</div>
     ${resume}
-    <div class="field"><label>AI 难度</label>${seg("level", [["easy", "新手"], ["normal", "老练"], ["hard", "大师"]], o.level)}
+    <div class="field"><label>AI 难度</label>${seg("level", [["easy", "Easy"], ["normal", "Normal"], ["hard", "Master"]], o.level)}
       <div class="seg"><span class="hint" id="lvHint"></span></div></div>
-    <div class="field"><label>推荐走法</label>${seg("hints", [["0", "关"], ["1", "开"]], o.hints ? "1" : "0")}</div>
+    <div class="field"><label>推荐走法</label>${seg("hints", [["0", "Off"], ["1", "On"]], o.hints ? "1" : "0")}</div>
     <div class="field" style="align-items:flex-start"><label>你的头像</label><div class="avgrid">${AVATARS.map(k =>
       `<div class="avopt ${k === o.avatar ? "on" : ""}" data-av="${k}">${avatarHTML(k, "#c9a15a", 44)}<span>${AVATAR_ZH[k]}</span></div>`).join("")}</div></div>
     <div class="btns">${S && S.started && !S.over ? `<button id="ngCancel">返回对局</button>` : ""}<button class="primary" id="ngGo">开始新对局</button></div>`);
@@ -1380,7 +1380,7 @@ function showRules(novice = true) {
 function tourStops(novice) {
   const n = (a, b) => novice ? a + b : a;
   return [
-    { sel: "#mapwrap", title: "地图",
+    { sel: "#mapwrap", title: "Map",
       text: n("80 座城市、21 个区域。城市下方的格位标出可建的产业，⚓ 为贸易港（暗色表示还没有连线接入，未开张），虚线为航线。点击城市或连线，可筛选该处的动作。",
         "你的板件和连线都建在这里；开局你在自己的本土区域，已自带连线。") },
     { sel: "#handPane", pane: "hand", title: "手牌",
@@ -1432,7 +1432,7 @@ function startTour(novice) {
       bub.querySelector(".k").textContent = `${k + 1} / ${stops.length}`;
       bub.querySelector(".d").textContent = st.text;
       bub.querySelector(".prev").disabled = k === 0;
-      bub.querySelector(".next").textContent = k === stops.length - 1 ? "开始游戏" : "下一步";
+      bub.querySelector(".next").textContent = k === stops.length - 1 ? "Start Game" : "Next Step";
       // 说明框放在目标下方；放不下放上方；都放不下（目标很大）就放在目标内部靠上
       const bw = Math.min(340, innerWidth - 24), bh = bub.offsetHeight || 150;
       let top = y + h + 10;
@@ -1457,12 +1457,12 @@ function startTour(novice) {
 }
 function showSettings() {
   const d = modal(`<button class="x">✕</button><h2>设置</h2><div class="sub">保存在这台设备上</div>
-    <div class="field"><label>AI 行动</label>${seg("step", [["1", "逐步（点击继续）"], ["0", "自动播放"]], SET.step ? "1" : "0")}</div>
-    <div class="field"><label>动画速度</label>${seg("speed", [["1.6", "慢"], ["1", "正常"], ["0.5", "快"], ["0.15", "极快"]], SET.speed)}</div>
-    <div class="field"><label>镜头跟随</label>${seg("follow", [["1", "跟随 AI 行动"], ["0", "不动"]], SET.follow ? "1" : "0")}</div>
-    <div class="field"><label>推荐走法</label>${seg("hints", [["0", "关"], ["1", "开"]], SET.hints ? "1" : "0")}</div>
-    <div class="field"><label>背景音乐</label>${seg("music", [["1", "开"], ["0", "关"]], SET.music ? "1" : "0")}</div>
-    <div class="field"><label>音量</label>${seg("vol", [["0.2", "低"], ["0.35", "中"], ["0.55", "高"]], SET.vol)}</div>
+    <div class="field"><label>AI 行动</label>${seg("step", [["1", "Click to Continue"], ["0", "Auto Play"]], SET.step ? "1" : "0")}</div>
+    <div class="field"><label>动画速度</label>${seg("speed", [["1.6", "Slow"], ["1", "Normal"], ["0.5", "Fast"], ["0.15", "Super Fast"]], SET.speed)}</div>
+    <div class="field"><label>镜头跟随</label>${seg("follow", [["1", "Follow AI's Action"], ["0", "Stop Moving"]], SET.follow ? "1" : "0")}</div>
+    <div class="field"><label>推荐走法</label>${seg("hints", [["0", "Off"], ["1", "On"]], SET.hints ? "1" : "0")}</div>
+    <div class="field"><label>背景音乐</label>${seg("music", [["1", "On"], ["0", "Off"]], SET.music ? "1" : "0")}</div>
+    <div class="field"><label>音量</label>${seg("vol", [["0.2", "Low"], ["0.35", "Medium"], ["0.55", "High"]], SET.vol)}</div>
     <div class="field"><label>存档</label><button id="stExport">导出存档文件</button><button id="stImport">导入存档文件</button></div>
     <div class="btns"><button class="primary">完成</button></div>`);
   bindSeg(d, async (k, v) => {
