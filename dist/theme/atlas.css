@@ -165,3 +165,25 @@ html.a11y-contrast-dark #app .modal button.on,html.a11y-contrast-dark #app .moda
 html.a11y-contrast-dark :is(button,.pcard,.act,#cityNavigator summary):focus-visible{
   outline:3px solid #ffeb00!important;outline-offset:3px;box-shadow:0 0 0 5px #000!important
 }
+/* Make the Larger setting visibly affect the whole interface, including theme-sized controls. */
+html.a11y-large-text body{font-size:18px!important;line-height:1.55!important}
+html.a11y-large-text #app :is(button,.brand,.chip,.meta,.pl .nm,.pl .r2,.pl .r3,.pl .lv,.pl .vp,
+  .mz .zn,.sec,.sub,.pcard .kind,.pcard .nm,#acttabs button,.act .tx,.act .gain,.act .src,.act .price,
+  .mt,.mrow,.lp-head,.le,.toast,.field>label,.seg .hint,.modal .sub,.modal h2,
+  .city-help,.city-section-title,.city-option){
+  font-size:max(18px,1.15em)!important;line-height:1.4!important
+}
+html.a11y-large-text #app :is(#mapbtns button,#confirm,#log,#log2,#tip,#hint,#playbar,#banner,#cityNavigator summary){
+  font-size:max(18px,1.15em)!important;line-height:1.4!important
+}
+html.a11y-large-text #app .pl .vp{font-size:max(27px,1.15em)!important}
+html.a11y-large-text #app .brand{font-size:max(28px,1.15em)!important}
+html.a11y-large-text #app .modal h2{font-size:max(32px,1.15em)!important}
+html.a11y-large-text .pl{min-height:94px;padding:10px}
+html.a11y-large-text #mapbtns{flex-wrap:wrap;max-width:min(620px,calc(100% - 24px))}
+html.a11y-large-text #cards{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))}
+html.a11y-large-text #cards .pcard{width:auto;height:116px}
+html.a11y-large-text #cards .pcard .nm{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+html.a11y-large-text .act .tx,html.a11y-large-text .act .gain,html.a11y-large-text .act .src{
+  white-space:normal!important;overflow:visible!important;text-overflow:clip!important
+}
