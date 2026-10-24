@@ -13,9 +13,20 @@ const RES_ZH = { coal: "煤", iron: "铁", prov: "啤酒" };
 const isMobile = () => matchMedia("(max-width: 760px)").matches;
 
 // ---------- 设置（本机偏好，存 localStorage） ----------
-const SET = Object.assign({ speed: 1, step: true, follow: true, hints: false, level: "normal", avatar: "uk", music: true, vol: "0.35" },
-  (() => { try { return JSON.parse(localStorage.getItem("bw_prefs") || "{}"); } catch (e) { return {}; } })());
+const savedPrefs = (() => { try { const value = JSON.parse(localStorage.getItem("bw_prefs") || "{}"); return value && typeof value === "object" ? value : {}; } catch (e) { return {}; } })();
+const savedContrastMode = savedPrefs.contrastMode ?? (savedPrefs.highContrast ? "light" : "off");
+const SET = Object.assign({ speed: 1, step: true, follow: true, hints: false, level: "normal", avatar: "uk", music: true, vol: "0.35",
+  contrastMode: "off", largeText: false, reduceMotion: false }, savedPrefs, { contrastMode: savedContrastMode });
+delete SET.highContrast;
 function savePrefs() { try { localStorage.setItem("bw_prefs", JSON.stringify(SET)); } catch (e) { } }
+function applyA11yPrefs() {
+  const root = document.documentElement;
+  root.classList.toggle("a11y-contrast", SET.contrastMode === "light");
+  root.classList.toggle("a11y-contrast-dark", SET.contrastMode === "dark");
+  root.classList.toggle("a11y-large-text", !!SET.largeText);
+  root.classList.toggle("a11y-reduce-motion", !!SET.reduceMotion);
+}
+applyA11yPrefs();
 
 let B = null, M = null, map = null;
 let S = null;          // 服务端最新状态
@@ -46,6 +57,7 @@ async function boot() {
   map.on("click", onMapClick);
   map.on("camera", (v, sc, zoomed) => { if (zoomed && UI.sel !== null) map.refreshPreview(); });   // 预览只随缩放变，平移不用重画
   if (isMobile()) map.setInset(0, 176);
+  renderCityNavigator();
   addEventListener("resize", () => { layoutInfobar(); map.resize(); setSheet(UI.sheet, UI.expanded); });
   bindUI();
   setSheet("hand", false);
@@ -127,7 +139,7 @@ async function applyState(st, animate) {
   saveLocal(st);
   const evs = st.events || [];
   const worth = evs.some(e => e.t === "act" || e.t === "round" || e.t === "era");
-  if (animate && S && worth) await playEvents(evs, st);
+  if (animate && S && worth && !SET.reduceMotion) await playEvents(evs, st);
   S = st; D = null;
   renderAll();
   if (S.over && !$("#final")) showFinal();
@@ -137,6 +149,7 @@ async function applyState(st, animate) {
 function renderAll() {
   const st = V(); if (!st || !st.started) return;
   renderTop(st); renderPlayers(st); renderMarkets(st); renderHand(st);
+  renderCityNavigator(st);
   renderActions(); renderMat(st); renderLog(st);
   map.setState(st, me(st).id);
   if (UI.card !== null) showCardTargets(UI.card);
@@ -220,6 +233,48 @@ function renderMarkets(st) {
   $("#markets2").innerHTML = html;
 }
 
+// Keyboard and screen-reader alternative to selecting places on the visual map.
+function renderCityNavigator(st = V()) {
+  const list = $("#cityList"), linkList = $("#linkList");
+  if (!list || !linkList || !B) return;
+  const counts = new Map(), linkCounts = new Map();
+  if (st && st.started && st.actions) st.actions.forEach(action => {
+    if (action.city) counts.set(action.city, (counts.get(action.city) || 0) + 1);
+    [action.link, action.second].filter(Boolean).forEach(link => {
+      const key = [...link].sort().join("|");
+      linkCounts.set(key, (linkCounts.get(key) || 0) + 1);
+    });
+  });
+  const cityButtons = document.createDocumentFragment();
+  [...B.cities].sort((a, b) => (a.en || a.zh || a.id).localeCompare(b.en || b.zh || b.id)).forEach(c => {
+    const button = document.createElement("button"), name = c.en || c.zh || c.id;
+    const region = c.regionEn || c.regionZh || c.region || "";
+    const count = counts.get(c.id) || 0;
+    button.type = "button";
+    button.className = "city-option";
+    button.dataset.city = c.id;
+    button.textContent = region ? `${name} · ${region}` : name;
+    button.setAttribute("aria-label", count
+      ? `${name}, ${region}, ${count} available actions`
+      : `${name}, ${region}`);
+    cityButtons.appendChild(button);
+  });
+  list.replaceChildren(cityButtons);
+
+  const linkButtons = document.createDocumentFragment();
+  [...linkCounts.entries()].sort((a, b) => a[0].localeCompare(b[0])).forEach(([key, count]) => {
+    const [a, b] = key.split("|");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "city-option link-option";
+    button.dataset.link = key;
+    button.textContent = `${cityZh(a)} — ${cityZh(b)}`;
+    button.setAttribute("aria-label", `${cityZh(a)} to ${cityZh(b)}, ${count} available actions`);
+    linkButtons.appendChild(button);
+  });
+  linkList.replaceChildren(linkButtons);
+}
+
 // ---------- 手牌 ----------
 function cardArt(c) {
   if (c.kind === "WILD") return c.v === "INDUSTRY" ? IND_ART.MFG : regionArt("WILD");
@@ -232,8 +287,10 @@ function renderHand(st) {
     const dead = !isWild && tg[ci].size === 0;
     const dspec = (UI.sel !== null || UI.passMode) ? discardSpec() : null;
     const dcls = dspec ? (UI.discard.includes(ci) ? "todisc" : dspec.allowed.includes(ci) ? "candisc" : "nodisc") : "";
-    return `<div class="pcard ${isInd ? "" : "region"} ${isWild ? "wild" : ""} ${dead ? "dead" : ""} ${UI.card === ci ? "sel" : ""} ${dcls}"
-      data-ci="${ci}" tabindex="0" title="${c.label}${dead ? "（当前不可用）" : ""}">
+    const kind = isWild ? "Wild card" : isInd ? "Industry card" : "Region card";
+    const selected = UI.card === ci;
+    return `<div class="pcard ${isInd ? "" : "region"} ${isWild ? "wild" : ""} ${dead ? "dead" : ""} ${selected ? "sel" : ""} ${dcls}"
+      data-ci="${ci}" tabindex="0" role="button" aria-pressed="${selected}" aria-label="${c.label}, ${kind}${dead ? ", currently unavailable" : ""}" title="${c.label}${dead ? " (currently unavailable)" : ""}">
       <span class="kind">${isWild ? "万用" : isInd ? "产业" : "区域"}</span>
       <div class="art" style="${artCSS(cardArt(c))}"></div><div class="nm">${c.label}</div></div>`;
   }).join("");
@@ -492,22 +549,18 @@ function renderActions() {
   }
   tabs.innerHTML = kinds.map(k => {
     const n = UI.filter ? filtered(g[k]).length : k === "DEVELOP" ? g[k].filter(a => !a.dev || a.dev.length === 1).length : g[k].length;
-    return `<button data-k="${k}" class="${k === UI.tab ? "on" : ""}">${KIND_ZH[k]}${best && best.kind === k ? "★" : ""}<span class="n">${n}</span></button>`;
+    return `<button type="button" data-k="${k}" class="${k === UI.tab ? "on" : ""}" aria-pressed="${k === UI.tab}">${KIND_ZH[k]}${best && best.kind === k ? "★" : ""}<span class="n">${n}</span></button>`;
   }).join("") +
-    (fk ? `<button class="filter" id="clearFilter">筛选：${fk.city ? cityZh(fk.city) : fk.link.split("|").map(cityZh).join("—")} ✕</button>` : "");
-
-if (UI.tab === "DEVELOP" && !UI.filter) {
-  list.innerHTML = devPickerHTML(g.DEVELOP, best);
-  renderConfirm();
-  return;
-}
+    (fk ? `<button class="filter" id="clearFilter">筛选：${fk.city ? cityZh(fk.city) : fk.link.split("|").map(cityZh).join("—")} ✕</button>` : "") +
+    `<button class="${st.actions.length ? "" : "primary "}passbtn" id="passbtn" title="不执行动作，弃 1 张牌">跳过</button>`;
+  if (UI.tab === "DEVELOP" && !UI.filter) { list.innerHTML = devPickerHTML(g.DEVELOP, best); renderConfirm(); return; }
   let items = filtered(g[UI.tab] || []);
   if (UI.tab === "BUILD") items.sort((a, b) => IND_ORDER.indexOf(a.industry) - IND_ORDER.indexOf(b.industry) || a.cost - b.cost);
   else if (UI.tab === "NETWORK") items.sort((a, b) => (!!a.second - !!b.second) || a.cost - b.cost);
   else if (UI.tab === "DEVELOP") items.sort((a, b) => IND_ORDER.indexOf(a.industry) - IND_ORDER.indexOf(b.industry));
   if (best) items.sort((a, b) => (b.best ? 1 : 0) - (a.best ? 1 : 0));    // 推荐的排第一（排序是稳定的）
   list.innerHTML = items.length ? items.slice(0, 160).map(a => `
-    <button type="button" class="act ${UI.sel === a.i ? "sel" : ""} ${a.best ? "best" : ""}" data-i="${a.i}">
+    <button type="button" class="act ${UI.sel === a.i ? "sel" : ""} ${a.best ? "best" : ""}" data-i="${a.i}" aria-pressed="${UI.sel === a.i}">
       ${actThumb(a)}
       <span class="body"><span class="tx">${actTitle(a)}</span>
         <span class="gain">${actGain(a)}</span>
@@ -640,6 +693,8 @@ function baseTargets() {
 function setMine(on, fit = false) {
   UI.mine = on; $("#btnMine").classList.toggle("on", on);
   if (on) { UI.net = false; $("#btnNet").classList.remove("on"); }
+  $("#btnMine").setAttribute("aria-pressed", String(on));
+  $("#btnNet").setAttribute("aria-pressed", String(!!UI.net));
   if (on && S && S.started) showMine(V() || S, fit);
   else baseTargets();
 }
@@ -894,7 +949,7 @@ function onMapHover(hit) {
 }
 function onMapClick(hit) {
   if (UI.playing) return;
-  if (!hit) { UI.card = null; baseTargets(); hideCardPop(); $$(".pcard.sel").forEach(x => x.classList.remove("sel")); if (UI.filter) { UI.filter = null; renderActions(); } hideTip(); return; }
+  if (!hit) { UI.card = null; baseTargets(); hideCardPop(); $$(".pcard").forEach(x => { x.classList.remove("sel"); x.setAttribute("aria-pressed", "false"); }); if (UI.filter) { UI.filter = null; renderActions(); } hideTip(); return; }
   if (hit.city) cityTip(hit.city); else linkTip(hit.link);
   if (!S || S.over || S.active !== me(S).id) return;
   let acts = [];
@@ -979,7 +1034,7 @@ function deep(o) { return JSON.parse(JSON.stringify(o)); }
 async function playEvents(events, final) {
   UI.playing = true; UI.skip = false;
   UI.stepN = 0; UI.stepTotal = events.filter(e => (e.t === "act" || e.t === "pass") && e.p !== me(S).id).length;
-  clearSel(); UI.card = null; baseTargets(); hideCardPop();
+  clearSel(); UI.card = null; $$(".pcard").forEach(x => { x.classList.remove("sel"); x.setAttribute("aria-pressed", "false"); }); baseTargets(); hideCardPop();
   D = deep(S);
   D.hand = final.hand;             // 手牌直接换成新的（弃牌 / 补牌不做逐张动画）
   renderActions(); renderTop(D); renderHint();     // 回放期间不挂给你的提示
@@ -1268,7 +1323,7 @@ async function yourTurnFx(n) {
 async function playOpening(st) {
   const op = st.opening;
   saveLocal(st);
-  if (!op) { S = st; D = null; renderAll(); return; }
+  if (!op || SET.reduceMotion) { S = st; D = null; renderAll(); return; }
   S = op; D = null; renderAll();                 // 谁都还没行动时的局面
   await map.focusRegion(me(op).home);
   UI.skip = false;
@@ -1340,11 +1395,19 @@ function modal(html, cls = "") {
   return d;
 }
 function seg(name, opts, cur) {
-  return `<div class="seg" data-name="${name}">${opts.map(([v, t]) => `<button data-v="${v}" class="${String(v) === String(cur) ? "on" : ""}">${t}</button>`).join("")}</div>`;
+  const labels = { contrastMode: "Contrast mode", largeText: "Text size", reduceMotion: "Animation" };
+  return `<div class="seg" role="group" aria-label="${labels[name] || name}" data-name="${name}">${opts.map(([v, t]) => {
+    const selected = String(v) === String(cur);
+    return `<button type="button" data-v="${v}" class="${selected ? "on" : ""}" aria-pressed="${selected}">${t}</button>`;
+  }).join("")}</div>`;
 }
 function bindSeg(root, onChange) {
   root.querySelectorAll(".seg").forEach(s => s.querySelectorAll("button").forEach(b => b.onclick = () => {
-    s.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+    s.querySelectorAll("button").forEach(x => {
+      const selected = x === b;
+      x.classList.toggle("on", selected);
+      x.setAttribute("aria-pressed", String(selected));
+    });
     onChange(s.dataset.name, b.dataset.v);
   }));
 }
@@ -1383,7 +1446,7 @@ function showNewGame() {
     try { st = await api("/api/new", { level: o.level, hints: o.hints, avatar: o.avatar }); }
     finally { wait.remove(); }
     await playOpening(st);
-    await map.focusRegion(me().home);
+    if (!SET.reduceMotion) await map.focusRegion(me().home);
     toast(`Home: ${me().homeZh}. Hover over cards in your hand to see buildable cities and required resources.`);
     try { if (!localStorage.getItem("bw_seen3")) { showHelp(); localStorage.setItem("bw_seen3", "1"); } } catch (e) { }
   };
@@ -1525,6 +1588,9 @@ function showSettings() {
     <div class="field"><label>动画速度</label>${seg("speed", [["1.6", "慢"], ["1", "正常"], ["0.5", "快"], ["0.15", "极快"]], SET.speed)}</div>
     <div class="field"><label>镜头跟随</label>${seg("follow", [["1", "跟随 AI 行动"], ["0", "不动"]], SET.follow ? "1" : "0")}</div>
     <div class="field"><label>推荐走法</label>${seg("hints", [["0", "关"], ["1", "开"]], SET.hints ? "1" : "0")}</div>
+    <div class="field"><label>Contrast mode</label>${seg("contrastMode", [["off", "Standard"], ["light", "Light high contrast"], ["dark", "Dark high contrast"]], SET.contrastMode)}</div>
+    <div class="field"><label>Text size</label>${seg("largeText", [["0", "Default"], ["1", "Larger"]], SET.largeText ? "1" : "0")}</div>
+    <div class="field"><label>Animation</label><div class="a11y-setting">${seg("reduceMotion", [["0", "Animations on"], ["1", "Reduce animations"]], SET.reduceMotion ? "1" : "0")}<p class="a11y-help">Skips animated AI move replays and minimizes decorative motion and camera movement.</p></div></div>
     <div class="field"><label>背景音乐</label>${seg("music", [["1", "开"], ["0", "关"]], SET.music ? "1" : "0")}</div>
     <div class="field"><label>音量</label>${seg("vol", [["0.2", "低"], ["0.35", "中"], ["0.55", "高"]], SET.vol)}</div>
     <div class="field"><label>存档</label><button id="stExport">导出存档文件</button><button id="stImport">导入存档文件</button></div>
@@ -1533,9 +1599,13 @@ function showSettings() {
     if (k === "speed") SET.speed = +v;
     if (k === "step") { SET.step = v === "1"; if (!SET.step) continueTap(); }
     if (k === "follow") SET.follow = v === "1";
+    if (k === "contrastMode") SET.contrastMode = v;
+    if (k === "largeText") SET.largeText = v === "1";
+    if (k === "reduceMotion") SET.reduceMotion = v === "1";
     if (k === "music") bgmToggle(v === "1");
     if (k === "vol") { SET.vol = v; if (SET.music) bgmRamp(+v, 0.4); }
     if (k === "hints") { SET.hints = v === "1"; if (S && S.started) { const st = await api("/api/settings", { hints: SET.hints }); S = st; renderAll(); } }
+    applyA11yPrefs();
     savePrefs();
   });
   d.querySelectorAll(".x,.btns button").forEach(b => b.onclick = () => d.remove());
@@ -1583,7 +1653,11 @@ function toast(text) {
 function setSheet(pane, expanded) {
   UI.sheet = pane; UI.expanded = expanded;
   document.body.classList.toggle("sheet-open", !!expanded);
-  $$("#sheetTabs button").forEach(b => b.classList.toggle("on", b.dataset.pane === pane));
+  $$("#sheetTabs button").forEach(b => {
+    const selected = b.dataset.pane === pane;
+    b.classList.toggle("on", selected);
+    b.setAttribute("aria-pressed", String(selected));
+  });
   if (isMobile()) {
     $$("#dock .pane").forEach(p => p.classList.toggle("on", p.dataset.pane === pane));
     const h = expanded ? Math.round(innerHeight * 0.56) : 176;
@@ -1598,6 +1672,8 @@ function setSheet(pane, expanded) {
 
 function bindUI() {
   bgmBind();
+  $("#btnNet").setAttribute("aria-pressed", String(!!UI.net));
+  $("#btnMine").setAttribute("aria-pressed", String(!!UI.mine));
   $("#btnNew").onclick = () => { $("#menu").classList.remove("open"); showNewGame(); };
   $("#btnHelp").onclick = () => { $("#menu").classList.remove("open"); showHelp(); };
   $("#btnSettings").onclick = () => { $("#menu").classList.remove("open"); showSettings(); };
@@ -1605,6 +1681,21 @@ function bindUI() {
   $("#btnWorld").onclick = () => map.fitWorld();
   $("#btnHome").onclick = () => { if (S && S.started) map.focusRegion(me().home); };
   $("#btnLog").onclick = () => { if (isMobile()) setSheet("log", true); else $("#logpanel").classList.toggle("hide"); renderLog(V() || S); };
+  const cityList = $("#cityList");
+  if (cityList) cityList.addEventListener("click", e => {
+    const button = e.target.closest(".city-option");
+    if (!button) return;
+    map.ensureVisible([button.dataset.city], 0.35);
+    onMapClick({ city: button.dataset.city, slot: null });
+  });
+  const linkList = $("#linkList");
+  if (linkList) linkList.addEventListener("click", e => {
+    const button = e.target.closest(".link-option");
+    if (!button) return;
+    const [a, b] = button.dataset.link.split("|");
+    map.ensureVisible([a, b], 0.35);
+    onMapClick({ link: button.dataset.link });
+  });
   $("#logClose").onclick = () => $("#logpanel").classList.add("hide");
   // 点记录里的一条，地图跳到那里并闪一下
   ["#log", "#log2"].forEach(sel => $(sel).addEventListener("click", e => {
@@ -1616,6 +1707,7 @@ function bindUI() {
   // 「我的网络」：把网络够不到的城市压暗，一眼看出自己能在哪建
   $("#btnNet").onclick = () => {
     UI.net = !UI.net; $("#btnNet").classList.toggle("on", UI.net);
+    $("#btnNet").setAttribute("aria-pressed", String(UI.net));
     if (UI.net) setMine(false);
     if (UI.net && S) map.setTargets(S.reach.length ? S.reach : null, "net"); else map.setTargets(null);
   };
@@ -1657,7 +1749,11 @@ function bindUI() {
     const ci = +pc.dataset.ci;
     if ((UI.sel !== null || UI.passMode) && pickDiscard(ci)) return;      // 已选动作时，点手牌改选弃牌
     UI.card = UI.card === ci ? null : ci;
-    $$(".pcard").forEach(x => x.classList.toggle("sel", +x.dataset.ci === UI.card));
+    $$(".pcard").forEach(x => {
+      const selected = +x.dataset.ci === UI.card;
+      x.classList.toggle("sel", selected);
+      x.setAttribute("aria-pressed", String(selected));
+    });
     if (UI.card === null) { baseTargets(); hideTip(); hideCardPop(); }
     else {
       showCardTargets(ci);
@@ -1677,6 +1773,13 @@ function bindUI() {
       renderConfirm(); renderHand(S); if (isMobile()) setSheet("act", true); return;
     }
     UI.tab = b.dataset.k; renderActions();
+  });
+  cards.addEventListener("keydown", e => {
+    const card = e.target.closest(".pcard");
+    if (!card || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    card.click();
   });
   const list = $("#actlist");
   list.addEventListener("click", e => {
@@ -1706,10 +1809,11 @@ function bindUI() {
   });
   addEventListener("keydown", e => {
     if (e.target.matches && e.target.matches("input,select,textarea")) return;
+    if ((e.key === " " || e.key === "Enter") && e.target.closest?.("button, a, summary, input, select, textarea, [role=button]")) return;
     if ((e.key === " " || e.key === "Enter") && UI.waitTap) { e.preventDefault(); continueTap(); return; }
     if (e.key === "Escape" && UI.playing) { UI.skip = true; continueTap(); return; }
     if (e.key === "Enter" && (UI.sel !== null || UI.passMode) && !UI.busy) { e.preventDefault(); go(); }
-    else if (e.key === "Escape") { clearSel(); UI.card = null; baseTargets(); hideCardPop(); UI.filter = null; renderActions(); hideTip(); }
+    else if (e.key === "Escape") { clearSel(); UI.card = null; $$(".pcard").forEach(x => { x.classList.remove("sel"); x.setAttribute("aria-pressed", "false"); }); baseTargets(); hideCardPop(); UI.filter = null; renderActions(); hideTip(); }
     else if (e.key === " " && UI.playing) { e.preventDefault(); }
     else if (e.key === "f" || e.key === "F") map.fitWorld();
     else if ((e.key === "h" || e.key === "H") && S && S.started) map.focusRegion(me().home);
