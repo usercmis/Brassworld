@@ -182,6 +182,15 @@ html.a11y-large-text #app .brand{font-size:max(28px,1.15em)!important}
 html.a11y-large-text #app .modal h2{font-size:max(32px,1.15em)!important}
 html.a11y-large-text .pl{min-height:94px;padding:10px}
 html.a11y-large-text #mapbtns{flex-wrap:wrap;max-width:min(620px,calc(100% - 24px))}
+/* Keep action tabs and their industry thumbnails aligned when enlarged text wraps. */
+html.a11y-large-text #app #acttabs{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:thin}
+html.a11y-large-text #app #acttabs button{flex:0 0 auto;white-space:nowrap}
+html.a11y-large-text #app #actlist .act{height:auto;min-height:144px;align-items:flex-start}
+html.a11y-large-text #app #actlist .act .body{align-self:flex-start}
+html.a11y-large-text #app #actlist .act .tx{font-size:18px!important;line-height:1.25!important}
+html.a11y-large-text #app #actlist .act .gain,
+html.a11y-large-text #app #actlist .act .src{font-size:16px!important;line-height:1.25!important}
+html.a11y-large-text #app #actlist .act .athumb{margin-top:2px}
 html.a11y-large-text #cards{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))}
 html.a11y-large-text #cards .pcard{width:auto;height:116px}
 html.a11y-large-text #cards .pcard .nm{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
