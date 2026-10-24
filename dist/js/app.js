@@ -160,7 +160,7 @@ function renderPlayers(st, bump = {}) {
       <div class="body">
         <div class="r1"><span class="nm" style="color:${PCOL[p.id]}">${p.name}</span>
           <span class="vp ${bump[p.id] ? "bump" : ""}" title="胜利点">${p.vp}</span></div>
-        <div class="r2"><span>£<b class="money">${p.money}</b></span><span>收入 <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
+        <div class="r2"><span>$<b class="money">${p.money}</b></span><span>收入 <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
         <div class="r3">${p.levelZh ? `<span class="lv">${p.levelZh}</span>` : ""}<span class="home">${p.homeZh}</span>${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="已与 ${pname(st, i)} 互通"></span>`).join("")}</div>
       </div></div>`;
   }).join("");
@@ -179,16 +179,16 @@ function layoutInfobar() {
 }
 function marketRow(m, kind) {
   // 价位条：每一档一格，按存量填充；宽度随窗口伸缩（以前一块一块画方块，窗口一窄就出界）
-  const lad = m.ladder.map(l => `<i title="£${l.price}：${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
-  return `<div class="mrow" title="${kind === "coal" ? "煤" : "铁"} ${m.count}/${m.capacity}，现价 £${m.price}">${cubeHTML(kind, 12)}` +
-    `<span class="mladder ${kind}">${lad}</span><b>£${m.price}</b></div>`;
+  const lad = m.ladder.map(l => `<i title="$${l.price}：${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
+  return `<div class="mrow" title="${kind === "coal" ? "煤" : "铁"} ${m.count}/${m.capacity}，现价 $${m.price}">${cubeHTML(kind, 12)}` +
+    `<span class="mladder ${kind}">${lad}</span><b>$${m.price}</b></div>`;
 }
 function marketCubes(m, kind) {
   // 按原作的市场板：每个价格档 per 个格子，从便宜到贵，有货的画实心方块。
   // 交通打通后几个市场合成一个，格子数翻几倍 —— 这时改画分档条，否则一行几十块方块把整条栏撑爆
   if (m.capacity > 16) {
     return `<span class="mladder ${kind}">` + m.ladder.map(l =>
-      `<i title="£${l.price}：${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("") +
+      `<i title="$${l.price}：${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("") +
       `</span><span class="mcount">${m.count}/${m.capacity}</span>`;
   }
   let h = "";
@@ -203,8 +203,8 @@ function renderMarkets(st) {
   const html = Object.entries(st.markets).map(([z, m]) => {
     const merged = size[grp[z]] > 1;
     const mates = merged ? Object.keys(grp).filter(k => grp[k] === grp[z] && k !== z).map(k => ZONE_ZH[k]).join("、") : "";
-    const tip = `${ZONE_ZH[z]}市场｜煤 ${m.coal.count}/${m.coal.capacity}，现价 £${m.coal.price}｜铁 ${m.iron.count}/${m.iron.capacity}，现价 £${m.iron.price}｜` +
-      `售空后按 £${m.coal.outside}/£${m.iron.outside} 外购` + (mine.has(z) ? "｜网络可达" : "") +
+    const tip = `${ZONE_ZH[z]}市场｜煤 ${m.coal.count}/${m.coal.capacity}，现价 $${m.coal.price}｜铁 ${m.iron.count}/${m.iron.capacity}，现价 $${m.iron.price}｜` +
+      `售空后按 $${m.coal.outside}/$${m.iron.outside} 外购` + (mine.has(z) ? "｜网络可达" : "") +
       (merged ? `｜已与${mates}合并` : "");
     return `<div class="mz ${mine.has(z) ? "mine" : ""} ${merged ? "merged" : ""}" data-zone="${z}" title="${tip}">
       <div class="zn">${ZONE_ZH[z]}${mine.has(z) ? " ●" : ""}${merged ? " ⛓" : ""}</div>
@@ -251,13 +251,13 @@ function cardTargets(card) {
 // ---- 为什么能 / 不能建：服务端给出每种产业下一块的规格和每座城的实际总价（buildInfo） ----
 const zoneMkt = { BRITAIN: "不列颠市场", EUROPE: "欧陆市场", AMERICAS: "美洲市场", ASIAPAC: "亚太市场" };
 function costParts(t, e) {
-  // 「£17 板件 + 亚太市场煤×1 £6 = £23」
-  const parts = [`£${t.cost} 板件`];
+  // 「$17 板件 + 亚太市场煤×1 $6 = $23」
+  const parts = [`$${t.cost} 板件`];
   (e.coalFrom || []).forEach(s => parts.push(`${cubeHTML("coal", 11)}${s.owner === me(S).id ? "自有" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} 免费`));
-  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "市场"}×${e.coalMkt} £${e.coalCash}`);
+  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "市场"}×${e.coalMkt} $${e.coalCash}`);
   (e.ironFrom || []).forEach(s => parts.push(`${cubeHTML("iron", 11)}${s.owner === me(S).id ? "自有" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} 免费`));
-  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "市场"}×${e.ironMkt} £${e.ironCash}`);
-  return parts.join(" + ") + (parts.length > 1 ? ` = £${e.money}` : "");
+  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "市场"}×${e.ironMkt} $${e.ironCash}`);
+  return parts.join(" + ") + (parts.length > 1 ? ` = $${e.money}` : "");
 }
 function canLoan() { return S && S.actions && S.actions.some(a => a.kind === "LOAN"); }
 function buildStatus(cityId, ind) {
@@ -275,7 +275,7 @@ function buildStatus(cityId, ind) {
   const cash = me(st).money;
   if (!hasReg && !hasInd) return { ok: false, e, why: `缺牌：需「${c.regionZh}」或「${B.industryZh[ind]}」` };
   if (e.money > cash) return { ok: false, e, short: true,
-    why: `资金不足：差 <b>£${e.money - cash}</b>${canLoan() ? "（可贷款 £30）" : ""}` };
+    why: `资金不足：差 <b>$${e.money - cash}</b>${canLoan() ? "（可贷款 $30）" : ""}` };
   return { ok: true, e };
 }
 function tileLines(ind, t) {
@@ -286,7 +286,7 @@ function tileLines(ind, t) {
   const note = ["COAL", "IRON"].includes(ind) ? `建成产出 ${t.produces} 块，售予市场`
     : ind === "PROV" ? "产出啤酒：帆船时代建成放 1 桶，蒸汽时代建成放 2 桶"
       : t.sellProv ? `销售耗啤酒 ×${t.sellProv}，须连通收购此货、已开张的贸易港` : "销售不耗啤酒，须连通收购此货、已开张的贸易港";
-  return `<div class="r"><span class="k">造价</span><b style="color:var(--gold2)">£${t.cost}</b>${need.length ? " + " + need.join("") : " · 无需煤铁"}</div>
+  return `<div class="r"><span class="k">造价</span><b style="color:var(--gold2)">$${t.cost}</b>${need.length ? " + " + need.join("") : " · 无需煤铁"}</div>
     <div class="r"><span class="k">收益</span>${give.join(" · ")}</div>
     <div class="r"><span class="k">备注</span>${note}</div>`;
 }
@@ -295,7 +295,7 @@ function cityLine(cityId, ind) {
   const detail = s.ok ? costParts((S.buildInfo[ind] || {}).tile, e)
     : s.short ? `${s.why}<br>${costParts((S.buildInfo[ind] || {}).tile, e)}` : s.why;
   return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span>
-    <span class="n">${cityZh(cityId)}${e && e.money !== null && e.money !== undefined ? ` £${e.money}` : ""}</span><span class="d">${detail}</span></div>`;
+    <span class="n">${cityZh(cityId)}${e && e.money !== null && e.money !== undefined ? ` $${e.money}` : ""}</span><span class="d">${detail}</span></div>`;
 }
 function cardPopHTML(card) {
   const st = S;
@@ -330,7 +330,7 @@ function cardPopHTML(card) {
     h += `<div class="r" style="margin-top:6px"><b style="color:var(--txt)">${cityZh(c.id)}</b>${netSet.size && !netSet.has(c.id) ? `<span class="sl" style="margin-left:6px">网络外</span>` : ""}</div>`;
     h += inds.map(ind => {
       const s = buildStatus(c.id, ind);
-      return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span><span class="n">${iconHTML(ind, 12, "currentColor")}${B.industryZh[ind]}${s.e && s.e.money != null ? ` £${s.e.money}` : ""}</span><span class="d">${s.ok ? "" : s.why}</span></div>`;
+      return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span><span class="n">${iconHTML(ind, 12, "currentColor")}${B.industryZh[ind]}${s.e && s.e.money != null ? ` $${s.e.money}` : ""}</span><span class="d">${s.ok ? "" : s.why}</span></div>`;
     }).join("");
   });
   return h + `<div class="foot">区域牌：该区域任一城市均可建，不必在网络内（同原作的地点牌）</div>`;
@@ -399,7 +399,7 @@ function actTitle(a) {
     return `${B.industryZh[a.industry]}${lv} <span class="c">·</span> ${cityZh(a.city)}`;
   }
   if (a.kind === "DEVELOP") return (a.dev || [a]).map(d => B.industryZh[d.industry] + (ROMAN[d.level] || "")).join("、");
-  if (a.kind === "LOAN") return "£30";
+  if (a.kind === "LOAN") return "$30";
   return "弃 3 张，换取万用牌 2 张";
 }
 function actGain(a) {
@@ -470,9 +470,9 @@ function renderActions() {
 
   const advisorMessage = best
     ? `★ Strategy Advisor
-      Current Money: £${player.money}
+      Current Money: $${player.money}
       Recommended Action: ${best.kind}
-      Action Cost: £${best.cost ?? 0}
+      Action Cost: $${best.cost ?? 0}
 
       ${explainMove(best)}`
     : "";
@@ -502,7 +502,7 @@ function renderActions() {
       <span class="body"><span class="tx">${actTitle(a)}</span>
         <span class="gain">${actGain(a)}</span>
         ${srcHTML(a) ? `<span class="src">${srcHTML(a)}</span>` : ""}</span>
-      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "£" + a.cost : "免费"}</span></button>`).join("")
+      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "$" + a.cost : "免费"}</span></button>`).join("")
     : `<div class="empty">${UI.filter ? "此处无该类动作" : "无可执行动作"}</div>`;
   if (advisorMessage) {
     list.insertAdjacentHTML(
@@ -610,7 +610,7 @@ function pickBeer(k) {
   renderConfirm(); previewSel();
 }
 function mktSaleText(m, short) {
-  if (m.n) return short ? `建成售市场 ×${m.n} £${m.money}` : `建成时卖给市场 ${m.n} 块，得 £${m.money}`;
+  if (m.n) return short ? `建成售市场 ×${m.n} $${m.money}` : `建成时卖给市场 ${m.n} 块，得 $${m.money}`;
   if (m.why === "nohub") return short ? "不连港，不售市场" : "此处未连通开张的贸易港：煤留在板件上，不卖给市场（只在建成时卖一次，之后连通也不会补卖）";
   return short ? "市场已满" : "市场已满：产出留在板件上";
 }
@@ -680,10 +680,10 @@ function renderConfirm() {
     box.classList.remove("hide"); return;
   }
   if (!a) { box.classList.add("hide"); return; }
-  const cost = a.cost ? `£${a.cost}` : "免费";
+  const cost = a.cost ? `$${a.cost}` : "免费";
   const detail = [];
-  if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`板件 £${a.base}`);
-  if (a.mktCash && a.kind !== "DEVELOP") detail.push(`购料 £${a.mktCash}`);
+  if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`板件 $${a.base}`);
+  if (a.mktCash && a.kind !== "DEVELOP") detail.push(`购料 $${a.mktCash}`);
   box.innerHTML = `<div class="ct"><div class="t1">${KIND_ZH[a.kind]}：${actTitle(a)}</div>
       <div class="t2"><b style="color:var(--gold2)">${cost}</b>${detail.length ? `（${detail.join(" + ")}）` : ""} · ${actGain(viewAction(a))} ${srcHTML(a) ? " · " + srcHTML(a) : ""}</div>
       ${a.mktSale ? `<div class="t2 msale">${mktSaleText(a.mktSale, false)}</div>` : ""}
@@ -741,9 +741,9 @@ function renderMat(st) {
     const left = Object.values(p.supply[ind] || {}).reduce((a, b) => a + b, 0);
     if (!t) return `<div class="mrow2 off"><span class="bi" style="${artCSS(IND_ART[ind])}"></span><span class="bn">${B.industryZh[ind]}</span><span></span><span></span><span class="need">已用完</span><span></span><span></span></div>`;
     const ok = t.era === "BOTH" || t.era === st.era;
-    return `<div class="mrow2 ${ok ? "" : "off"}" title="${B.industryZh[ind]}${ROMAN[t.level]}：造价 £${t.cost} · ${t.vp} 分 · 收入 +${t.income} · 连线 ${t.linkVp}${t.noDev ? " · 不可开发" : ""}${ok ? "" : `（${st.eraZh}不可用，需先开发）`}">
+    return `<div class="mrow2 ${ok ? "" : "off"}" title="${B.industryZh[ind]}${ROMAN[t.level]}：造价 $${t.cost} · ${t.vp} 分 · 收入 +${t.income} · 连线 ${t.linkVp}${t.noDev ? " · 不可开发" : ""}${ok ? "" : `（${st.eraZh}不可用，需先开发）`}">
       <span class="bi" style="${artCSS(IND_ART[ind])}"></span><span class="bn">${B.industryZh[ind]}</span>
-      <span class="lv${t.noDev ? " nd" : ""}">${ROMAN[t.level]}</span><span class="cost">£${t.cost}</span>
+      <span class="lv${t.noDev ? " nd" : ""}">${ROMAN[t.level]}</span><span class="cost">$${t.cost}</span>
       <span class="need">${needHTML(t)}${ok ? "" : ` <span class="warn">需开发</span>`}</span>
       <span class="give">${t.vp}分 +${t.income}</span><span class="left">×${left}</span></div>`;
   }).join("");
@@ -764,7 +764,7 @@ function showMatModal(pid) {
             const left = sup[t.level] || 0;
             const era = t.era === "E1" ? "帆" : t.era === "E2" ? "蒸" : "";
             return `<div class="tcard ${nt && nt.level === t.level ? "next" : ""} ${left ? "" : "gone"}">
-              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}${t.noDev ? `<span class="era nd" title="不可开发：须建造后才能使用下一级">不可开发</span>` : ""}<span class="c">£${t.cost}</span></div>
+              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}${t.noDev ? `<span class="era nd" title="不可开发：须建造后才能使用下一级">不可开发</span>` : ""}<span class="c">$${t.cost}</span></div>
               <div class="r">${needHTML(t)}</div>
               <div class="r"><span><b>${t.vp}</b>分</span><span>· 收入<b>+${t.income}</b></span><span>· 连线<b>${t.linkVp}</b></span>${ind === "PROV" ? `<span title="帆船时代建成放 1 桶，蒸汽时代建成放 2 桶">· 产啤酒<b>1</b>/<b>2</b></span>` : t.produces ? `<span>· 产${ind === "COAL" ? "煤" : "铁"}<b>${t.produces}</b></span>` : ""}</div>
               <span class="cnt">×${left}/${t.copies}</span></div>`;
@@ -820,7 +820,7 @@ function renderHint() {
     else if (st.deck < 12 && st.era === "E1") h = "帆船时代即将结束：Ⅰ级板件与全部连线将被清除";
     else {
       const unlinked = st.players.filter(q => !q.isMe && !(st.linkedPairs || []).some(k => k.includes(m.id) && k.includes(q.id)));
-      if (unlinked.length && st.round <= 4) h = `与 ${unlinked[0].name} 网络互通：双方各得 £8、收入 +1`;
+      if (unlinked.length && st.round <= 4) h = `与 ${unlinked[0].name} 网络互通：双方各得 $8、收入 +1`;
     }
   }
   el.textContent = h; el.classList.toggle("hide", !h);
@@ -849,7 +849,7 @@ function cityTip(id) {
     const inds = [...new Set(c.slots.filter((s, i) => !taken.has(i)).flat())];
     if (inds.length) h += `<div class="sl" style="margin-top:5px;color:var(--gold)">可建：</div>` + inds.map(ind => {
       const bs = buildStatus(id, ind);
-      return `<div class="tipst ${bs.ok ? "ok" : "no"}">${bs.ok ? "✓" : "✗"} ${B.industryZh[ind]}${bs.e && bs.e.money != null ? ` £${bs.e.money}` : ""}${bs.ok ? "" : "：" + bs.why}</div>`;
+      return `<div class="tipst ${bs.ok ? "ok" : "no"}">${bs.ok ? "✓" : "✗"} ${B.industryZh[ind]}${bs.e && bs.e.money != null ? ` $${bs.e.money}` : ""}${bs.ok ? "" : "：" + bs.why}</div>`;
     }).join("");
   }
   const hub = (st.hubs || []).find(x => x.city === id && x.active);
@@ -871,7 +871,7 @@ function linkTip(key) {
   const cost = B.linkCost[`${st.era}_${l.sea ? "sea" : "land"}`];
   let h = `<b>${cityZh(a)} — ${cityZh(b)}</b> <span class="sl">${l.sea ? "海运" : "陆路"} · ${era}</span>`;
   if (bl) h += `<div class="row" style="color:${PCOL[bl.owner]}">${pname(st, bl.owner)} 已建成</div>`;
-  else if (cost && (l.era === "BOTH" || l.era === st.era)) h += `<div class="sl">建造费用：£${cost.money}${cost.coal ? ` + ${cubeHTML("coal", 11)}` : ""}${cost.prov ? ` + ${cubeHTML("prov", 11)}` : ""}</div>`;
+  else if (cost && (l.era === "BOTH" || l.era === st.era)) h += `<div class="sl">建造费用：$${cost.money}${cost.coal ? ` + ${cubeHTML("coal", 11)}` : ""}${cost.prov ? ` + ${cubeHTML("prov", 11)}` : ""}</div>`;
   else h += `<div class="sl">${st.eraZh}不可用</div>`;
   showTip(h);
 }
@@ -1047,7 +1047,7 @@ async function playOne(ev, final) {
     D.turnOrder = ev.order; D.round = (ev.round || D.round) + 1;
     renderPlayers(D); renderTop(D);
     Object.entries(ev.income || {}).forEach(([pid, v]) => {
-      if (v) floatText(screenOfPlayer(+pid, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), v > 0 ? "#b9e3a7" : "#f09a8a");
+      if (v) floatText(screenOfPlayer(+pid, ".money"), (v > 0 ? "+$" : "−$") + Math.abs(v), v > 0 ? "#b9e3a7" : "#f09a8a");
     });
     D.log.push({ who: "system", text: `第 ${ev.round} 轮结束：发放收入；本轮花费少者下轮先行`, _new: 1 }); renderLog(D);
     D._strip = ev.order;              // 等下一位玩家开始时再显示顺位条（时代交替的画面要先播完）
@@ -1118,7 +1118,7 @@ async function playOne(ev, final) {
   if (ev.kind === "NETWORK") [ev.link, ev.second].filter(Boolean).forEach(l => map.flashLink([...l].sort().join("|"), col));
   // 数字飘字：钱、收入、分
   const dm = (ev.dmoney || {})[pid];
-  if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+£" : "−£") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
+  if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+$" : "−$") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
   const di = (ev.dincome || {})[pid];
   if (di) setTimeout(() => floatText(screenOfPlayer(pid, ".r2"), `收入 ${di > 0 ? "+" : ""}${di}`, di > 0 ? "#b9e3a7" : "#f09a8a"), DUR(260));
   if (ev.kind === "SELL") floatText(tgt, "卖出！", "#ffe39a");
@@ -1129,7 +1129,7 @@ async function playOne(ev, final) {
     for (let j = 0; j < sold; j++) flyCube(ev.industry === "COAL" ? "coal" : "iron", tgt, screenOfMarket(zone), 200 + j * 90, 480);
   }
   Object.entries(ev.dmoney || {}).forEach(([op, v]) => {       // 被取用资源的对手也有反应
-    if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), "#b9e3a7");
+    if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+$" : "−$") + Math.abs(v), "#b9e3a7");
   });
   (ev.notes || []).forEach(n => { if (!n.startsWith("取用")) toast(n); });
   if (!isMe && SET.step && !UI.skip && !document.hidden) {
@@ -1376,10 +1376,10 @@ function showNewGame() {
 const STEPS = () => [
   ["目标", "两个时代结束后，胜利点最高者获胜；同分比收入，再比现金。胜利点来自<b>已翻面的板件</b>（每个时代末各计一次）与<b>连线</b>（两端已翻面板件的连线分之和，贸易港所在城市另加 2）。"],
   ["回合与手牌", "每回合 2 个动作（帆船时代第一轮每人 1 个），每个动作弃 1 张手牌，弃哪张由你选择（确认条中可更换）。建造须弃对应的<b>区域牌</b>、<b>产业牌</b>或万用牌；侦查弃 3 张，换取万用区域牌与万用产业牌各 1 张。也可弃 1 张牌跳过一个动作。回合结束时补足 8 张，牌库用尽后不再补。"],
-  ["网络", "<b>你的网络</b>：有你板件的城市，以及你的连线两端的城市。用产业牌建造须在网络内，用区域牌可建在该区域任一城市（同原作的地点牌），新连线须接着网络。卖货、用煤、用别人的啤酒只要求<b>连通</b>：沿任何玩家的连线能到即可。本土区域开局自带连线。每个动作铺 1 条连线；蒸汽时代可一次铺 2 条（第二条接在第一条远端），两条单价之和 + £5，另耗 1 啤酒。"],
+  ["网络", "<b>你的网络</b>：有你板件的城市，以及你的连线两端的城市。用产业牌建造须在网络内，用区域牌可建在该区域任一城市（同原作的地点牌），新连线须接着网络。卖货、用煤、用别人的啤酒只要求<b>连通</b>：沿任何玩家的连线能到即可。本土区域开局自带连线。每个动作铺 1 条连线；蒸汽时代可一次铺 2 条（第二条接在第一条远端），两条单价之和 + $5，另耗 1 啤酒。"],
   ["建造", "城里有只画该产业的空格时须建在那里，没有才用两种产业共用的格。帆船时代每人在每座城市最多 1 块板件。可用同产业更高级的板件<b>覆盖</b>自己的板件；对手的煤矿、铁厂只在场上与市场都没有该资源时可覆盖。被覆盖的板件移出游戏，原主不损失收入。"],
   ["煤、铁与市场", "酿酒厂帆船时代建成放 1 桶啤酒，蒸汽时代建成放 2 桶。建造消耗煤（黑）与铁（橙）。煤取与该处连通、相隔连线最少的煤矿（谁的都行），不足时向市场购买（该处须与开张的贸易港连通）；铁可取场上任意铁厂。铁厂建成后，产出售予所在区的市场；煤矿须在建成时已与开张的贸易港连通才售予市场。两者都只在<b>建成那一刻</b>卖一次，之后再连通也不会补卖。蒸汽时代起，有连线连通的两个区市场合并。"],
-  ["资金", "每轮结束按收入领钱（全局最后一轮除外）。贷款：得 £30，收入退 3 级，不得低于 −10。收入为负且付不起时，须拆除自己的板件，每块得造价一半；仍不够，每差 £1 扣 1 分。"],
+  ["资金", "每轮结束按收入领钱（全局最后一轮除外）。贷款：得 $30，收入退 3 级，不得低于 −10。收入为负且付不起时，须拆除自己的板件，每块得造价一半；仍不够，每差 $1 扣 1 分。"],
   ["板件等级", `各产业板件按等级依次使用。开发：移除 1–2 块板件（各为所属产业当前最低一级，可同一产业），每块支付 1 铁。Ⅰ级板件在帆船时代结束时清出地图；标注“仅帆船时代”的板件须先开发，蒸汽时代才能继续该产业。${anyNoDev() ? "标注“不可开发”的板件只能建造。" : ""}`],
   ["销售", "棉纺厂、制造厂、陶瓷厂须连通收购该货的<b>贸易港</b>方可销售。贸易港须有连线接入（港口城市至少连着一条已建成的连线，谁建的都行）才开张，未开张时地图上显示为暗色。销售按板件所示消耗啤酒，用哪桶由你选：所卖贸易港自带的啤酒（每个时代 1 桶）、你自己任一酿酒厂的、或与该板件连通的对手酿酒厂的。一次销售可任选几件，售出后板件翻面。用掉贸易港自带的啤酒时获得该港奖励（港内啤酒每个时代补满）。"],
   ["操作", "悬停（手机：点按）手牌可查看可建城市、造价与所需资源。点击城市或连线可筛选该处动作。选中动作后，地图显示目标与资源来源，确认后执行。AI 行动逐条回放，可跳过。"],
@@ -1400,10 +1400,10 @@ function showHelp() {
 const DIFFS = [
   ["地图与牌", "世界地图共 80 城、21 个区域。地点牌改为<b>区域牌</b>：可在该区域任一城市建造，同样不必在网络内。固定 4 人局，每个时代约 13 轮。"],
   ["本土", "每人有一个本土区域，开局自带本土内的连线。"],
-  ["贸易港", "对应商人，共 17 个，设在城市里，这座城市也可以建产业。原作卖货至少要经一条通往商人的连线，这里对应为：<b>港口城市至少连着一条已建成的连线（谁建的都行）才开张</b>，未开张的港不收货，也不能经它买市场煤。每个港收购的货物固定；港口奖励（免费开发、收入 +2、3 分、£5）每局随机分配。港内啤酒即商人啤酒，每个时代补满。"],
+  ["贸易港", "对应商人，共 17 个，设在城市里，这座城市也可以建产业。原作卖货至少要经一条通往商人的连线，这里对应为：<b>港口城市至少连着一条已建成的连线（谁建的都行）才开张</b>，未开张的港不收货，也不能经它买市场煤。每个港收购的货物固定；港口奖励（免费开发、收入 +2、3 分、$5）每局随机分配。港内啤酒即商人啤酒，每个时代补满。"],
   ["市场", "煤铁市场分四个区：不列颠、欧陆、美洲、亚太，各一套原作规格的市场，开局储量不同。在哪个区建造，就向哪个区的市场购买、卖给哪个区的市场。<b>蒸汽时代</b>起，两个区之间有连线连通（谁修的都行），两区市场合并成一个：方块与空位合在一起，价格趋同，建在任一区的煤矿、铁厂都能填补合并后市场的空位。帆船时代各区市场始终独立。"],
-  ["海运线", "除陆路外还有海运线：帆船时代 £8；蒸汽时代 £12，另耗 1 煤、1 啤酒。蒸汽时代双铺时，第二条须接在第一条的远端。"],
-  ["额外收益", "两名玩家的网络首次连通时，双方各得 £8、收入 +1。时代结束时，同一城市有两家以上的板件，每家 +2 分。"],
+  ["海运线", "除陆路外还有海运线：帆船时代 $8；蒸汽时代 $12，另耗 1 煤、1 啤酒。蒸汽时代双铺时，第二条须接在第一条的远端。"],
+  ["额外收益", "两名玩家的网络首次连通时，双方各得 $8、收入 +1。时代结束时，同一城市有两家以上的板件，每家 +2 分。"],
   ["简化", "收入为负、须拆板件还钱时，由系统自动选择损失最小的板件。"],
 ];
 function stepsHTML(list) {
