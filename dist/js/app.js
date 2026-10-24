@@ -1186,7 +1186,7 @@ function clickOrWait(el, ms) {           // 点一下或等够时间就继续；
 async function orderDraw(st) {
   const order = st.turnOrder, meId = me(st).id, pos = order.indexOf(meId) + 1;
   const d = document.createElement("div"); d.id = "orderDraw";
-  d.innerHTML = `<h2>抽取顺位</h2><div class="sub">第 1 轮的行动顺序随机决定</div>
+  d.innerHTML = `<h2>抽取顺位</h2><div class="sub">The turn order for Round 1 is determined randomly.</div>
     <div class="odcards">${order.map((pid, i) => {
       const p = pInfo(st, pid);
       return `<div class="odc ${pid === meId ? "me" : ""}" style="--c:${PCOL[pid]};--i:${i}"><div class="in">
@@ -1194,7 +1194,7 @@ async function orderDraw(st) {
         <div class="front"><span class="no">${i + 1}</span>${avatarHTML(p.avatar, PCOL[pid], 54)}<b style="color:${PCOL[pid]}">${p.isMe ? "你" : p.name}</b></div>
       </div></div>`;
     }).join("")}</div>
-    <div class="cap"></div><div class="hintc">点击继续</div>`;
+    <div class="cap"></div><div class="hintc">Click to continue</div>`;
   document.body.appendChild(d);
   await sleep(UI.skip ? 0 : DUR(900));                      // 洗牌
   const cards = [...d.querySelectorAll(".odc")];
