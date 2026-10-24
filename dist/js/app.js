@@ -400,7 +400,7 @@ function actTitle(a) {
   }
   if (a.kind === "DEVELOP") return (a.dev || [a]).map(d => B.industryZh[d.industry] + (ROMAN[d.level] || "")).join("、");
   if (a.kind === "LOAN") return "$30";
-  return "弃 3 张，换取万用牌 2 张";
+  return "Discard 3 cards to draw 2 wild cards.";
 }
 function actGain(a) {
   if (a.kind === "BUILD") {
@@ -638,7 +638,7 @@ function devBonusHTML(a) {
   const d = a && a.devBonus; if (!d || !devBonusLive(a)) return "";
   const cur = UI.devBonus[0];
   const chips = d.options.map(o => `<button type="button" class="dchip bchip ${cur === o.industry ? "on" : ""}" data-db="${o.industry}">${B.industryZh[o.industry]}${ROMAN[o.level] || ""}</button>`).join("") +
-    `<button type="button" class="dchip bchip ${cur === "" ? "on" : ""}" data-db="">放弃</button>`;
+    `<button type="button" class="dchip bchip ${cur === "" ? "on" : ""}" data-db="">Discard</button>`;
   return `<div class="dsel"><span class="dl bl">港口奖励：免费开发</span>${chips}</div>`;
 }
 function selAction() { return S && UI.sel !== null ? S.actions.find(a => a.i === UI.sel) : null; }
@@ -655,7 +655,7 @@ function discardHTML() {
     const c = S.hand[i]; if (!c) return "";
     return `<button type="button" class="dchip ${UI.discard.includes(i) ? "on" : ""} ${c.kind === "WILD" ? "wild" : ""}" data-di="${i}">${c.label}</button>`;
   }).join("");
-  return `<div class="dsel"><span class="dl">弃牌${d.n > 1 ? `（选 ${d.n} 张）` : ""}</span>${chips}</div>`;
+  return `<div class="dsel"><span class="dl">Discard${d.n > 1 ? ` (Select ${d.n} cards)` : ""}</span>${chips}</div>`;
 }
 function pickDiscard(i) {
   const d = discardSpec(); if (!d || !d.allowed.includes(i)) return false;
