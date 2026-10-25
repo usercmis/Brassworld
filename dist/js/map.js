@@ -162,11 +162,11 @@ export class MapView {
     (S.hubs || []).forEach(h => { if (h.active) hubs[h.city] = h; });
     this.hubByCity = hubs;
     const contested = new Set(S.contested || []);
-    Object.values(this.city).forEach(c => this.drawPlate(c, byCity[c.id] || {}, hubs[c.id], contested.has(c.id)));
+    Object.values(this.city).forEach(c => this.drawPlate(c, byCity[c.id] || {}, hubs[c.id], contested.has(c.id), S.eco ? S.eco.pollution[c.id] : null));
     this.layout();
   }
 
-  drawPlate(c, tiles, hub, contested) {
+  drawPlate(c, tiles, hub, contested, pollution = null) {
     const g = this.plateEls[c.id];
     g.innerHTML = "";
     g.classList.toggle("contested", contested);
@@ -202,6 +202,12 @@ export class MapView {
       }
       g.appendChild(hg);
     }
+    if (pollution !== null) {
+      const eg = el("g", { class: "eco-city-badge" + (pollution >= 6 ? " eco-high" : "") });
+      eg.appendChild(el("rect", { x: -1.65, y: 0.95, width: 3.3, height: .58, rx: .1 }));
+      const text = el("text", { x: 0, y: 1.36 }); text.textContent = `P ${pollution}/10${pollution >= 6 ? " +£5" : ""}`; eg.appendChild(text);
+      const title = el("title", {}); title.textContent = `Pollution ${pollution}/10. ${pollution >= 6 ? "Building here costs £5 extra." : "No pollution surcharge."}`; eg.appendChild(title);g.appendChild(eg);
+    }
     // 建造格
     c.slots.forEach((allowed, i) => {
       const sx = -W / 2 + i * (1 + SLOT_GAP);
@@ -213,6 +219,7 @@ export class MapView {
         const art = artSVG(IND_ART[t.industry] || IND_ART.MFG, 0.05, 0.05, 0.9, 0.72);
         if (!t.flipped) art.setAttribute("opacity", ".45");
         sg.appendChild(art);
+        if (t.ecoUpgraded) { const eco = el("text", { x: .8, y: .3, class: "eco-tile-mark" }); eco.textContent="♧";sg.appendChild(eco); }
         const band = el("rect", { x: 0.03, y: 0.78, width: 0.94, height: 0.19 });
         band.style.fill = PCOL[t.owner]; sg.appendChild(band);
         const lv = el("text", { x: 0.2, y: 0.32, class: "lvl" }); lv.textContent = ROMAN[t.level] || t.level;
