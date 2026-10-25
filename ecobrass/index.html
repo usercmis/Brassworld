@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#f5edd8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>EcoBrass — An Industrial Atlas</title>
+
+<link rel="stylesheet" href="/css/app.css?v=restore-britain-only-20261025">
+<link rel="stylesheet" href="/theme/atlas.css?v=no-tiles-20261025">
+<script type="module" src="/theme/english.js?v=english-ui-no-tiles-20261025"></script>
+<link rel="stylesheet" href="/ecobrass.css">
+</head>
+<body>
+<a class="skip-link" href="#mapwrap">Skip to the map and game controls</a>
+<svg width="0" height="0" style="position:absolute"><defs id="symbols"></defs></svg>
+<div id="app">
+  <header id="top">
+    <div class="brand">EcoBrass</div>
+    <span class="chip" id="eraChip">—</span>
+    <span class="meta" id="roundInfo"></span>
+    <span class="pips" id="pips" title="Actions remaining this turn"></span>
+    <span class="spacer"></span>
+    <button id="btnMusic" class="musicbtn" title="Background music (M)" aria-label="Background music">♪</button>
+    <nav id="menu">
+      <button id="btnNew" class="primary">New game</button>
+      <button id="btnHelp">How to play</button>
+      <button id="btnSettings">Settings</button>
+    </nav>
+    <button id="btnMenu" class="iconbtn" aria-label="Menu">☰</button>
+  </header>
+
+  <section id="infobar">
+    <div id="players"></div>
+    <div id="markets" class="markets"></div>
+  </section>
+
+  <main id="mapwrap" tabindex="-1" aria-label="Game map and controls">
+    <svg id="map" aria-label="World map"></svg>
+    <details id="cityNavigator">
+      <summary>City and connection navigator</summary>
+      <button id="btnCitiesClose" class="city-nav-close" type="button">Close</button>
+      <p class="city-help">Select a city to inspect it or filter available actions. Press Escape once or use Close to return to the map.</p>
+      <h2 class="city-section-title">Cities</h2>
+      <div id="cityList" role="group" aria-label="Cities"></div>
+      <h2 class="city-section-title">Available links</h2>
+      <div id="linkList" role="group" aria-label="Available links"></div>
+    </details>
+    <div id="hint" class="hide"></div>
+    <div id="mapbtns">
+      <button id="btnCities" type="button" aria-controls="cityNavigator" aria-expanded="false">Cities</button>
+      <button id="btnWorld" title="World view (F)">World</button>
+      <button id="btnHome" title="Go to home region (H)">Home</button>
+      <button id="btnNet" title="Show your network and buildable cities">Network</button>
+      <button id="btnMine" title="Highlight your industries (I)">Mine</button>
+      <button id="btnLog" title="Game journal">Journal</button>
+    </div>
+    <div id="tip" class="hide"></div>
+    <aside id="logpanel" class="hide"><div class="lp-head">Game journal<button class="x" id="logClose">✕</button></div><div id="log"></div></aside>
+    <div id="actfeed"></div>
+    <div id="playbar" class="hide"><span id="playwho"></span><span class="spacer"></span>
+      <button id="btnSkip" title="Skip the remaining replay (Esc)">Skip ▸▸</button></div>
+    <div id="banner" class="hide"></div>
+  </main>
+
+  <footer id="dock">
+    <div id="sheetHandle"><span></span></div>
+    <div id="sheetTabs">
+      <button data-pane="hand" class="on">Hand</button>
+      <button data-pane="act">Actions<b id="actCount"></b></button>
+      <button data-pane="mkt">Market</button>
+      <button data-pane="log">Journal</button>
+    </div>
+    <section id="handPane" class="pane on" data-pane="hand">
+      <div class="sec">Hand <span class="sub" id="handSub"></span></div>
+      <div id="cards"></div>
+    </section>
+    <section id="actPane" class="pane" data-pane="act">
+      <div id="acttabs"></div>
+      <div id="confirm" class="hide"></div>
+      <div id="actlist"></div>
+    </section>
+    <section id="mktPane" class="pane mobile-only" data-pane="mkt"><div id="markets2" class="markets"></div></section>
+    <section id="logPane" class="pane mobile-only" data-pane="log"><div id="log2"></div></section>
+  </footer>
+</div>
+<div id="cardpop" class="hide"></div>
+<div id="fx"></div>
+<div id="toasts"></div>
+<script type="module" src="/js/app.js?v=no-tiles-20261025"></script>
+</body>
+</html>
