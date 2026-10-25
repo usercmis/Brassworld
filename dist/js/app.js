@@ -1,22 +1,21 @@
-import { translate as T, registerPlayers, describeAction, rules, differences, tour } from "../theme/locale.js";
 // 《工业革命：世界》前端主程序
 import { SYMBOLS, PCOL, IND_ART, artCSS, regionArt, iconHTML, cubeHTML, avatarHTML, AVATARS, AVATAR_ZH,
   ROMAN, BONUS_FULL, BONUS_SHORT, IND_ORDER } from "./art.js";
-import { MapView } from "./map.js?v=industrial-belt-20-v1";
+import { MapView } from "./map.js?v=accessibility-text-2";
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const ZONE_ZH = { BRITAIN: "Britain", EUROPE: "Europe", AMERICAS: "Americas", ASIAPAC: "Asia-Pacific" };
-const KIND_ORDER = ["BUILD", "NETWORK", "SELL", "DEVELOP", "LOAN", "SCOUT", "CLEAN_UP", "ECO_UPGRADE"];
-const KIND_ZH = { BUILD: "Build", NETWORK: "Connect", SELL: "Sell", DEVELOP: "Develop", LOAN: "Loan", SCOUT: "Scout", CLEAN_UP: "Clean Up", ECO_UPGRADE: "Eco Upgrade" };
-const RES_ZH = { coal: "Coal", iron: "Iron", prov: "Beer" };
+const ZONE_ZH = { BRITAIN: "不列颠", EUROPE: "欧陆", AMERICAS: "美洲", ASIAPAC: "亚太" };
+const KIND_ORDER = ["BUILD", "NETWORK", "SELL", "DEVELOP", "LOAN", "SCOUT"];
+const KIND_ZH = { BUILD: "建造", NETWORK: "连接", SELL: "销售", DEVELOP: "开发", LOAN: "贷款", SCOUT: "侦查" };
+const RES_ZH = { coal: "煤", iron: "铁", prov: "啤酒" };
 const isMobile = () => matchMedia("(max-width: 760px)").matches;
 
 // ---------- 设置（本机偏好，存 localStorage） ----------
 const savedPrefs = (() => { try { const value = JSON.parse(localStorage.getItem("bw_prefs") || "{}"); return value && typeof value === "object" ? value : {}; } catch (e) { return {}; } })();
 const savedContrastMode = savedPrefs.contrastMode ?? (savedPrefs.highContrast ? "light" : "off");
-const SET = Object.assign({ speed: 1, step: true, follow: true, hints: false, level: "normal", avatar: "uk", music: true, vol: "0.35",
+const SET = Object.assign({ speed: 1, step: true, follow: true, hints: false, level: "normal", avatar: "uk",
   contrastMode: "off", largeText: false, reduceMotion: false }, savedPrefs, { contrastMode: savedContrastMode });
 delete SET.highContrast;
 function savePrefs() { try { localStorage.setItem("bw_prefs", JSON.stringify(SET)); } catch (e) { } }
@@ -30,31 +29,29 @@ function applyA11yPrefs() {
 applyA11yPrefs();
 
 let B = null, M = null, map = null;
-let fullBoard = null, fullMap = null, shownMapId = null;
 let S = null;          // 服务端最新状态
 let D = null;          // 回放中的「显示状态」：从旧状态出发，逐个事件往前推
 const UI = { tab: null, filter: null, sel: null, card: null, busy: false, playing: false, skip: false, sheet: "hand", expanded: false,
   discard: [], passMode: false, devPick: [], devBonus: [], beer: [] };
 
 const api = (p, b) => fetch(p, b ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) } : {})
-  .then(async r => {
-    const data = await r.json();
-    if (!r.ok) throw new Error(T(data.error || "The game service is temporarily unavailable."));
-    return data;
-  });
+  .then(r => r.json());
 const city = id => B.cities.find(c => c.id === id);
-const cityZh = id => T(map && map.city[id] ? map.city[id].short : (city(id) || {}).zh || id);
+const cityZh = id => (map && map.city[id] ? map.city[id].short : (city(id) || {}).zh || id);
 const V = () => D || S;
 const me = (st = V()) => st.players.find(p => p.isMe);
-const pname = (st, id) => T((st.players.find(p => p.id === id) || {}).name || "");
+const pname = (st, id) => (st.players.find(p => p.id === id) || {}).name || "";
 
-const englishPlayerName = T;
+const englishPlayerName = name => ({
+  "麦克莱伦": "McClellan",
+  "阿什沃思": "Ashworth",
+  "彭伯顿": "Pemberton"
+})[name] || name;
 
 // ================= 启动 =================
 async function boot() {
   $("#symbols").innerHTML = SYMBOLS;
   [B, M] = await Promise.all([api("/api/board"), fetch("/assets/map.json").then(r => r.json())]);
-  fullBoard = B; fullMap = M;
   map = new MapView($("#map"), B, M, { targetPx: isMobile() ? 26 : 30 });
   map.on("hover", onMapHover);
   map.on("click", onMapClick);
@@ -65,14 +62,14 @@ async function boot() {
   bindUI();
   setSheet("hand", false);
   document.addEventListener("visibilitychange", () => { if (document.hidden && UI.playing) UI.skip = true; });
-  window.__bw = { get map() { return map; }, get S() { return S; }, get D() { return D; }, get BGM() { return BGM; }, UI, SET, renderAll };   // 调试用
+  window.__bw = { get map() { return map; }, get S() { return S; }, get D() { return D; }, UI, SET, renderAll };   // 调试用
   const st = await api("/api/state");
   if (st.started) {
     await applyState(st, false);
     map.focusRegion(me().home);
   } else if (localSave() && await resumeLocal(true)) {
     // 服务器重启过、会话没了：有本地存档就直接续上，不用玩家再点一次
-    toast("Previous game restored.");
+    toast("已恢复上一局");
   } else {
     map.fitWorld();
     showNewGame();
@@ -83,29 +80,29 @@ async function boot() {
 function saveLocal(st) {
   try {
     if (st.save && !st.over) {
-      localStorage.setItem("bw_industrial20_save", JSON.stringify(st.save));
-      localStorage.setItem("bw_industrial20_save_meta", JSON.stringify({
+      localStorage.setItem("bw_save", JSON.stringify(st.save));
+      localStorage.setItem("bw_save_meta", JSON.stringify({
         t: Date.now(), round: st.round, era: st.eraZh, mode: st.mode,
         players: st.players.map(p => ({ name: p.name, vp: p.vp, me: p.isMe }))
       }));
     }
-    if (st.over) { localStorage.removeItem("bw_industrial20_save"); localStorage.removeItem("bw_industrial20_save_meta"); }
+    if (st.over) { localStorage.removeItem("bw_save"); localStorage.removeItem("bw_save_meta"); }
   } catch (e) { /* 隐私模式等情况下存不了，不影响游戏 */ }
 }
 function localSave() {
   try {
-    const s = localStorage.getItem("bw_industrial20_save");
-    return s ? { save: JSON.parse(s), meta: JSON.parse(localStorage.getItem("bw_industrial20_save_meta") || "{}") } : null;
+    const s = localStorage.getItem("bw_save");
+    return s ? { save: JSON.parse(s), meta: JSON.parse(localStorage.getItem("bw_save_meta") || "{}") } : null;
   } catch (e) { return null; }
 }
 async function resumeLocal(quiet) {
   const ls = localSave(); if (!ls) return false;
   const st = await api("/api/load", { save: ls.save });
-  if (!st.started) { toast(st.error || "Unable to load the saved game."); return false; }
+  if (!st.started) { toast(st.error || "存档无法读取"); return false; }
   PREV_CLEAR();
   await applyState(st, false);
   map.focusRegion(me().home);
-  if (!quiet) toast(`Local save loaded: ${T(st.eraZh)}, Round ${st.round}`);
+  if (!quiet) toast("已读取本地存档：" + st.eraZh + " 第 " + st.round + " 轮");
   return true;
 }
 function PREV_CLEAR() { S = null; D = null; UI.sel = null; UI.filter = null; }
@@ -115,21 +112,21 @@ async function submit(path, body) {
   if (UI.busy || UI.playing) return;
   UI.busy = true; document.body.classList.add("busy");
   // 服务器在算 AI 的回合时给个提示，否则界面看起来像卡住了
-  const think = setTimeout(() => { $("#playwho").innerHTML = "Your rivals are thinking…"; $("#playbar").classList.remove("hide"); }, 350);
+  const think = setTimeout(() => { $("#playwho").innerHTML = "对手思考中…"; $("#playbar").classList.remove("hide"); }, 350);
   try {
     let r = await api(path, Object.assign({ v: S ? S.ver : undefined }, body));
     if (r && r.started === false && localSave()) {
       // 服务端重启过、会话丢了：用本地存档恢复（刚才这一步没执行，玩家重点一次即可）
       await resumeLocal(true);
-      toast("Game restored. Please select your action again.");
+      toast("会话已恢复，请重新操作");
       return;
     }
-    if (r.stale) toast("The game state has changed. Please select again.");
+    if (r.stale) toast("局面已更新，请重新选择");
     if (r.error) toast(r.error);
     UI.sel = null; UI.filter = null; UI.card = null; UI.passMode = false; UI.discard = [];
     await applyState(r, true);
   } catch (e) {
-    console.error(e); toast("Connection error: " + e.message);
+    console.error(e); toast("网络错误：" + e.message);
   } finally {
     clearTimeout(think);
     if (!UI.playing) $("#playbar").classList.add("hide");
@@ -151,26 +148,9 @@ async function applyState(st, animate) {
 // ================= 渲染 =================
 function renderAll() {
   const st = V(); if (!st || !st.started) return;
-  const mapId = st.mapId || 'world';
-  if (shownMapId !== mapId) {
-    if (st.mapId === 'industrial-belt-20-v1') {
-      const keep = new Set(st.mapCities);
-      B = { ...fullBoard,
-        cities: fullBoard.cities.filter(c => keep.has(c.id)),
-        regions: fullBoard.regions.filter(r => fullBoard.cities.some(c => keep.has(c.id) && c.region === r.id)),
-        links: fullBoard.links.filter(l => keep.has(l.a) && keep.has(l.b)) };
-      const keys = new Set(B.links.map(l => [l.a,l.b].sort().join('|')));
-      M = { ...fullMap, cities: Object.fromEntries(Object.entries(fullMap.cities).filter(([id]) => keep.has(id))),
-        links: Object.fromEntries(Object.entries(fullMap.links).filter(([id]) => keys.has(id))),
-        zones: Object.fromEntries(Object.entries(fullMap.zones).filter(([id]) => ['BRITAIN', 'AMERICAS'].includes(id))) };
-    } else { B = fullBoard; M = fullMap; }
-    map.replaceBoard(B, M, st.mapId === 'industrial-belt-20-v1');
-    shownMapId = mapId;
-  }
-  registerPlayers(st.players);
   renderTop(st); renderPlayers(st); renderMarkets(st); renderHand(st);
   renderCityNavigator(st);
-  renderActions(); renderMat(st); renderLog(st);
+  renderActions(); renderLog(st);
   map.setState(st, me(st).id);
   if (UI.card !== null) showCardTargets(UI.card);
   else if (UI.mine) showMine(st, false);
@@ -181,10 +161,8 @@ function renderAll() {
 }
 
 function renderTop(st) {
-  $("#eraChip").textContent = T(st.eraZh);
-  if (!$("#btnEcoRules")) { const b = document.createElement("button"); b.id="btnEcoRules"; b.textContent="Eco rules"; b.onclick=()=>modal(ECO_RULES_HTML); $("#menu").append(b); }
-  $("#btnEcoRules").hidden = !st.eco;
-  $("#roundInfo").textContent = `Round ${st.round} · Deck: ${st.deck}${st.eco ? " · ECO MODE · INDUSTRIAL BELT 20" : ""}`;
+  $("#eraChip").textContent = st.eraZh;
+  $("#roundInfo").textContent = `第 ${st.round} 轮 · 牌库 ${st.deck}`;
   const myTurn = !st.over && st.active === me(st).id && !UI.playing;
   $("#pips").innerHTML = [...Array(st.actionsTotal || 2).keys()].map(i => `<span class="pip ${myTurn && i < st.actionsLeft ? "" : "off"}"></span>`).join("");
 }
@@ -195,14 +173,14 @@ function renderPlayers(st, bump = {}) {
   $("#players").innerHTML = ps.map(p => {
     const links = (st.linkedPairs || []).filter(k => k.includes(p.id)).map(k => k[0] === p.id ? k[1] : k[0]);
     return `<div class="pl ${p.id === st.active ? "active" : ""} ${p.isMe ? "me" : ""}" data-p="${p.id}"
-      title="${englishPlayerName(p.name)}｜Tiles ${p.tiles} · Links ${p.links} · Hand ${p.hand}｜Click to view all industry tiles">
+      title="${englishPlayerName(p.name)} · Tiles ${p.tiles} · Links ${p.links} · Hand ${p.hand}">
       <span class="order">${order.indexOf(p.id) + 1}</span>
       ${avatarHTML(p.avatar, PCOL[p.id], isMobile() ? 30 : 40)}
       <div class="body">
       <div class="r1"><span class="nm" style="color:${PCOL[p.id]}">${englishPlayerName(p.name)}</span>
-      <span class="vp ${bump[p.id] ? "bump" : ""}" title="Victory points">${p.vp}</span></div>
-      <div class="r2"><span>£<b class="money">${p.money}</b></span><span>Income <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
-      <div class="r3">${p.levelZh ? `<span class="lv">${T(p.levelZh)}</span>` : ""}<span class="home">${T(p.homeZh)}</span>${st.eco ? `<span class="eco-green">♧ ${p.greenPoints || 0} green</span>` : ""}${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="Network connected to ${pname(st, i)}"></span>`).join("")}</div>
+      <span class="vp ${bump[p.id] ? "bump" : ""}" title="胜利点">${p.vp}</span></div>
+      <div class="r2"><span>$<b class="money">${p.money}</b></span><span>收入 <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
+      <div class="r3">${p.levelZh ? `<span class="lv">${p.levelZh}</span>` : ""}<span class="home">${p.homeZh}</span>${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="已与 ${pname(st, i)} 互通"></span>`).join("")}</div>
       </div></div>`;
   }).join("");
   layoutInfobar();
@@ -220,16 +198,16 @@ function layoutInfobar() {
 }
 function marketRow(m, kind) {
   // 价位条：每一档一格，按存量填充；宽度随窗口伸缩（以前一块一块画方块，窗口一窄就出界）
-  const lad = m.ladder.map(l => `<i title="£${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
-  return `<div class="mrow" title="${kind === "coal" ? "Coal" : "Iron"} ${m.count}/${m.capacity} — current price £${m.price}">${cubeHTML(kind, 12)}` +
-    `<span class="mladder ${kind}">${lad}</span><b>£${m.price}</b></div>`;
+  const lad = m.ladder.map(l => `<i title="$${l.price}：${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
+  return `<div class="mrow" title="${kind === "coal" ? "煤" : "铁"} ${m.count}/${m.capacity}，现价 $${m.price}">${cubeHTML(kind, 12)}` +
+    `<span class="mladder ${kind}">${lad}</span><b>$${m.price}</b></div>`;
 }
 function marketCubes(m, kind) {
   // 按原作的市场板：每个价格档 per 个格子，从便宜到贵，有货的画实心方块。
   // 交通打通后几个市场合成一个，格子数翻几倍 —— 这时改画分档条，否则一行几十块方块把整条栏撑爆
   if (m.capacity > 16) {
     return `<span class="mladder ${kind}">` + m.ladder.map(l =>
-      `<i title="£${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("") +
+      `<i title="$${l.price}：${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("") +
       `</span><span class="mcount">${m.count}/${m.capacity}</span>`;
   }
   let h = "";
@@ -241,16 +219,12 @@ function renderMarkets(st) {
   const mine = new Set(st.myZones || []);
   const grp = st.zoneGroup || {}, size = {};
   Object.values(grp).forEach(r => size[r] = (size[r] || 0) + 1);
-  // The Industrial Belt map has cities only in Britain and the Americas.
-  // Filter display entries only; resource balances and market rules stay server-owned.
-  const visibleMarkets = Object.entries(st.markets).filter(([z]) =>
-    st.mapId !== 'industrial-belt-20-v1' || z === 'BRITAIN' || z === 'AMERICAS');
-  const html = visibleMarkets.map(([z, m]) => {
+  const html = Object.entries(st.markets).map(([z, m]) => {
     const merged = size[grp[z]] > 1;
-    const mates = merged ? Object.keys(grp).filter(k => grp[k] === grp[z] && k !== z).map(k => ZONE_ZH[k]).join(", ") : "";
-    const tip = `${ZONE_ZH[z]} market | Coal ${m.coal.count}/${m.coal.capacity} — current price £${m.coal.price} | Iron ${m.iron.count}/${m.iron.capacity} — current price £${m.iron.price}｜` +
-      `When empty, buy coal/iron for £${m.coal.outside}/£${m.iron.outside}` + (mine.has(z) ? " | Reachable through your network" : "") +
-      (merged ? ` | Merged with ${mates}` : "");
+    const mates = merged ? Object.keys(grp).filter(k => grp[k] === grp[z] && k !== z).map(k => ZONE_ZH[k]).join("、") : "";
+    const tip = `${ZONE_ZH[z]}市场｜煤 ${m.coal.count}/${m.coal.capacity}，现价 $${m.coal.price}｜铁 ${m.iron.count}/${m.iron.capacity}，现价 $${m.iron.price}｜` +
+      `售空后按 $${m.coal.outside}/$${m.iron.outside} 外购` + (mine.has(z) ? "｜网络可达" : "") +
+      (merged ? `｜已与${mates}合并` : "");
     return `<div class="mz ${mine.has(z) ? "mine" : ""} ${merged ? "merged" : ""}" data-zone="${z}" title="${tip}">
       <div class="zn">${ZONE_ZH[z]}${mine.has(z) ? " ●" : ""}${merged ? " ⛓" : ""}</div>
       ${marketRow(m.coal, "coal")}${marketRow(m.iron, "iron")}</div>`;
@@ -273,8 +247,8 @@ function renderCityNavigator(st = V()) {
   });
   const cityButtons = document.createDocumentFragment();
   [...B.cities].sort((a, b) => (a.en || a.zh || a.id).localeCompare(b.en || b.zh || b.id)).forEach(c => {
-    const button = document.createElement("button"), name = T(c.en || c.zh || c.id);
-    const region = T(c.regionEn || c.regionZh || c.region || "");
+    const button = document.createElement("button"), name = c.en || c.zh || c.id;
+    const region = c.regionEn || c.regionZh || c.region || "";
     const count = counts.get(c.id) || 0;
     button.type = "button";
     button.className = "city-option";
@@ -316,12 +290,12 @@ function renderHand(st) {
     const kind = isWild ? "Wild card" : isInd ? "Industry card" : "Region card";
     const selected = UI.card === ci;
     return `<div class="pcard ${isInd ? "" : "region"} ${isWild ? "wild" : ""} ${dead ? "dead" : ""} ${selected ? "sel" : ""} ${dcls}"
-      data-ci="${ci}" tabindex="0" role="button" aria-pressed="${selected}" aria-label="${T(c.label)}, ${kind}${dead ? ", currently unavailable" : ""}" title="${T(c.label)}${dead ? " (currently unavailable)" : ""}">
-      <span class="kind">${isWild ? "Wild" : isInd ? "Industry" : "Region"}</span>
-      <div class="art" style="${artCSS(cardArt(c))}"></div><div class="nm">${T(c.label)}</div></div>`;
+      data-ci="${ci}" tabindex="0" role="button" aria-pressed="${selected}" aria-label="${c.label}, ${kind}${dead ? ", currently unavailable" : ""}" title="${c.label}${dead ? " (currently unavailable)" : ""}">
+      <span class="kind">${isWild ? "万用" : isInd ? "产业" : "区域"}</span>
+      <div class="art" style="${artCSS(cardArt(c))}"></div><div class="nm">${c.label}</div></div>`;
   }).join("");
   const usable = tg.filter((t, i) => st.hand[i].kind === "WILD" || t.size).length;
-  $("#handSub").textContent = st.hand.length ? `Usable: ${usable}/${st.hand.length}` : "";
+  $("#handSub").textContent = st.hand.length ? `可用 ${usable}/${st.hand.length}` : "";
 }
 // 这张牌能在哪建：区域牌 = 该区域城市（仍须在网络内）；产业牌 = 网络内有空格能建这种产业的城市
 function cardTargets(card) {
@@ -338,91 +312,91 @@ function cardTargets(card) {
     (inds === null || sl.some(x => inds.includes(x))) && !(taken[c.id] && taken[c.id].has(i)))).map(c => c.id));
 }
 // ---- 为什么能 / 不能建：服务端给出每种产业下一块的规格和每座城的实际总价（buildInfo） ----
-const zoneMkt = { BRITAIN: "Britain market", EUROPE: "Europe market", AMERICAS: "Americas market", ASIAPAC: "Asia-Pacific market" };
+const zoneMkt = { BRITAIN: "不列颠市场", EUROPE: "欧陆市场", AMERICAS: "美洲市场", ASIAPAC: "亚太市场" };
 function costParts(t, e) {
   // 「$17 板件 + 亚太市场煤×1 $6 = $23」
-  const parts = [`£${t.cost} Tiles`];
-  (e.coalFrom || []).forEach(s => parts.push(`${cubeHTML("coal", 11)}${s.owner === me(S).id ? "Your own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} Free`));
-  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "Market"}×${e.coalMkt} £${e.coalCash}`);
-  (e.ironFrom || []).forEach(s => parts.push(`${cubeHTML("iron", 11)}${s.owner === me(S).id ? "Your own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} Free`));
-  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "Market"}×${e.ironMkt} £${e.ironCash}`);
-  return parts.join(" + ") + (parts.length > 1 ? ` = £${e.money}` : "");
+  const parts = [`$${t.cost} 板件`];
+  (e.coalFrom || []).forEach(s => parts.push(`${cubeHTML("coal", 11)}${s.owner === me(S).id ? "自有" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} 免费`));
+  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "市场"}×${e.coalMkt} $${e.coalCash}`);
+  (e.ironFrom || []).forEach(s => parts.push(`${cubeHTML("iron", 11)}${s.owner === me(S).id ? "自有" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} 免费`));
+  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "市场"}×${e.ironMkt} $${e.ironCash}`);
+  return parts.join(" + ") + (parts.length > 1 ? ` = $${e.money}` : "");
 }
 function canLoan() { return S && S.actions && S.actions.some(a => a.kind === "LOAN"); }
 function buildStatus(cityId, ind) {
   const st = S, info = (st.buildInfo || {})[ind], c = city(cityId);
   if (!info || !c) return { ok: false, why: "—" };
-  if (info.reason) return { ok: false, why: T(info.reason) };
+  if (info.reason) return { ok: false, why: info.reason };
   // 区域牌（原作的地点牌）可建在网络外；产业牌只能建在网络内
   const inNet = !st.reach.length || st.reach.includes(cityId);
   const hasReg = st.hand.some(h => (h.kind === "REGION" && h.v === c.region) || (h.kind === "WILD" && h.v === "REGION"));
   const hasInd = st.hand.some(h => (h.kind === "INDUSTRY" && h.v.split("+").includes(ind)) || (h.kind === "WILD" && h.v === "INDUSTRY"));
-  if (!inNet && !hasReg) return { ok: false, why: `Outside your network: requires a ${T(c.regionZh)} region card` };
+  if (!inNet && !hasReg) return { ok: false, why: `不在网络内：需「${c.regionZh}」区域牌` };
   const e = (info.cities || []).find(x => x.city === cityId);
-  if (!e) return { ok: false, why: "No suitable empty slot" };
-  if (e.money === null) return { ok: false, why: T(e.why) };
+  if (!e) return { ok: false, why: "无未被占用的对应格位" };
+  if (e.money === null) return { ok: false, why: e.why };
   const cash = me(st).money;
-  if (!hasReg && !hasInd) return { ok: false, e, why: `Missing card: requires ${T(c.regionZh)} or ${T(B.industryZh[ind])}` };
+  if (!hasReg && !hasInd) return { ok: false, e, why: `缺牌：需「${c.regionZh}」或「${B.industryZh[ind]}」` };
   if (e.money > cash) return { ok: false, e, short: true,
-    why: `Insufficient funds: <b>£${e.money - cash}</b> short${canLoan() ? " (Loan available: £30)" : ""}` };
+    why: `资金不足：差 <b>$${e.money - cash}</b>${canLoan() ? "（可贷款 $30）" : ""}` };
   return { ok: true, e };
 }
 function tileLines(ind, t) {
   const need = [];
   for (let i = 0; i < t.coal; i++) need.push(cubeHTML("coal", 12));
   for (let i = 0; i < t.iron; i++) need.push(cubeHTML("iron", 12));
-  const give = [`<b>${t.vp}</b> VP`, `Income +${t.income}`, `Links ${t.linkVp}`];
-  const note = ["COAL", "IRON"].includes(ind) ? `Produces ${t.produces} resources when built; sells to market`
-    : ind === "PROV" ? "Produces 1 beer in the Sail Era or 2 in the Steam Era"
-      : t.sellProv ? `Requires ${t.sellProv} beer to sell and a connection to an open port accepting these goods` : "No beer required to sell; connect to an open port accepting these goods";
-  return `<div class="r"><span class="k">Cost</span><b style="color:var(--gold2)">£${t.cost}</b>${need.length ? " + " + need.join("") : " · No coal or iron required"}</div>
-    <div class="r"><span class="k">Rewards</span>${give.join(" · ")}</div>
-    <div class="r"><span class="k">Notes</span>${note}</div>`;
+  const give = [`<b>${t.vp}</b> 分`, `收入 +${t.income}`, `连线 ${t.linkVp}`];
+  const note = ["COAL", "IRON"].includes(ind) ? `建成产出 ${t.produces} 块，售予市场`
+    : ind === "PROV" ? "产出啤酒：帆船时代建成放 1 桶，蒸汽时代建成放 2 桶"
+      : t.sellProv ? `销售耗啤酒 ×${t.sellProv}，须连通收购此货、已开张的贸易港` : "销售不耗啤酒，须连通收购此货、已开张的贸易港";
+  return `<div class="r"><span class="k">造价</span><b style="color:var(--gold2)">$${t.cost}</b>${need.length ? " + " + need.join("") : " · 无需煤铁"}</div>
+    <div class="r"><span class="k">收益</span>${give.join(" · ")}</div>
+    <div class="r"><span class="k">备注</span>${note}</div>`;
 }
 function cityLine(cityId, ind) {
   const s = buildStatus(cityId, ind), e = s.e;
   const detail = s.ok ? costParts((S.buildInfo[ind] || {}).tile, e)
     : s.short ? `${s.why}<br>${costParts((S.buildInfo[ind] || {}).tile, e)}` : s.why;
   return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span>
-    <span class="n">${cityZh(cityId)}${e && e.money !== null && e.money !== undefined ? ` £${e.money}` : ""}</span><span class="d">${detail}</span></div>`;
+    <span class="n">${cityZh(cityId)}${e && e.money !== null && e.money !== undefined ? ` $${e.money}` : ""}</span><span class="d">${detail}</span></div>`;
 }
 function cardPopHTML(card) {
   const st = S;
   if (card.kind === "WILD")
-    return `<div class="h"><b>${T(card.label)}</b></div><div class="r">${card.v === "REGION" ? "Counts as any region: build in any eligible city, including outside your network" : "Counts as any industry: build within your network"}. Expires at the end of this era.</div>`;
+    return `<div class="h"><b>${card.label}</b></div><div class="r">${card.v === "REGION" ? "视为任意区域：可建在任一城市，不必在网络内" : "视为任意产业：须建在网络内"}；本时代结束作废。</div>`;
   if (card.kind === "INDUSTRY") {
     const inds = card.v.split("+");
     if (inds.length > 1)       // 棉纺厂/制造厂共用一种牌：两种产业各列一段
       return inds.map(i => cardPopHTML({ kind: "INDUSTRY", v: i })).join(`<div class="sep"></div>`);
     const ind = card.v, info = (st.buildInfo || {})[ind] || {}, t = info.tile;
-    let h = `<div class="h"><b>${T(B.industryZh[ind])}${t ? " " + (ROMAN[t.level] || "") : ""}</b>` +
-      (t && t.era !== "BOTH" ? `<span class="era">${t.era === "E1" ? "Sail Era only" : "Steam Era only"}</span>` : "") +
-      (t && t.noDev ? `<span class="era">Cannot be developed</span>` : "") +
-      `<span class="left">Remaining: ${info.left || 0}</span></div>`;
+    let h = `<div class="h"><b>${B.industryZh[ind]}${t ? " " + (ROMAN[t.level] || "") : ""}</b>` +
+      (t && t.era !== "BOTH" ? `<span class="era">${t.era === "E1" ? "仅帆船时代" : "仅蒸汽时代"}</span>` : "") +
+      (t && t.noDev ? `<span class="era">不可开发</span>` : "") +
+      `<span class="left">余 ${info.left || 0} 块</span></div>`;
     if (t) h += tileLines(ind, t);
     h += `<div class="sep"></div>`;
-    if (info.reason) return h + `<div class="c no"><span class="m">✗</span><span class="d">${T(info.reason)}</span></div>`;
+    if (info.reason) return h + `<div class="c no"><span class="m">✗</span><span class="d">${info.reason}</span></div>`;
     const cs = (info.cities || []).slice().sort((a, b) => (a.money ?? 999) - (b.money ?? 999));
-    if (!cs.length) return h + `<div class="c no"><span class="m">✗</span><span class="d">No empty ${T(B.industryZh[ind])} slots in your network</span></div>`;
+    if (!cs.length) return h + `<div class="c no"><span class="m">✗</span><span class="d">网络内无可建${B.industryZh[ind]}的未占用格位</span></div>`;
     h += cs.slice(0, 6).map(e => cityLine(e.city, ind)).join("");
-    if (cs.length > 6) h += `<div class="foot">${cs.length - 6} more cities</div>`;
-    return h + `<div class="foot">Industry card: build this industry in any eligible city in your network</div>`;
+    if (cs.length > 6) h += `<div class="foot">另 ${cs.length - 6} 城</div>`;
+    return h + `<div class="foot">产业牌：网络内任一城市均可建此产业</div>`;
   }
   // 区域牌：这个区域里每座城、每个空格能建什么、多少钱
   const cs = B.cities.filter(c => c.region === card.v);
   const netSet = new Set(st.reach);
-  let h = `<div class="h"><b>${T(card.label)}</b><span class="left">Region card</span></div>`;
+  let h = `<div class="h"><b>${card.label}</b><span class="left">区域牌</span></div>`;
   cs.forEach(c => {
     const taken = new Set(st.placed.filter(p => p.city === c.id).map(p => p.slot));
     const inds = [...new Set(c.slots.filter((s, i) => !taken.has(i)).flat())];
-    if (!inds.length) { h += `<div class="c no"><span class="m">✗</span><span class="n">${cityZh(c.id)}</span><span class="d">All slots occupied</span></div>`; return; }
-    h += `<div class="r" style="margin-top:6px"><b style="color:var(--txt)">${cityZh(c.id)}</b>${netSet.size && !netSet.has(c.id) ? `<span class="sl" style="margin-left:6px">Outside your network</span>` : ""}</div>`;
+    if (!inds.length) { h += `<div class="c no"><span class="m">✗</span><span class="n">${cityZh(c.id)}</span><span class="d">格位已满</span></div>`; return; }
+    h += `<div class="r" style="margin-top:6px"><b style="color:var(--txt)">${cityZh(c.id)}</b>${netSet.size && !netSet.has(c.id) ? `<span class="sl" style="margin-left:6px">网络外</span>` : ""}</div>`;
     h += inds.map(ind => {
       const s = buildStatus(c.id, ind);
-      return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span><span class="n">${iconHTML(ind, 12, "currentColor")}${T(B.industryZh[ind])}${s.e && s.e.money != null ? ` £${s.e.money}` : ""}</span><span class="d">${s.ok ? "" : s.why}</span></div>`;
+      return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span><span class="n">${iconHTML(ind, 12, "currentColor")}${B.industryZh[ind]}${s.e && s.e.money != null ? ` $${s.e.money}` : ""}</span><span class="d">${s.ok ? "" : s.why}</span></div>`;
     }).join("");
   });
-  return h + `<div class="foot">Region card: build in any eligible city in this region, including outside your network (like location cards in Brass)</div>`;
+  return h + `<div class="foot">区域牌：该区域任一城市均可建，不必在网络内（同原作的地点牌）</div>`;
 }
 function showCardPop(ci, anchor) {
   const st = V(), card = st.hand[ci], pop = $("#cardpop");
@@ -447,12 +421,12 @@ function showCardTargets(ci) {
   const anchor = document.querySelector(`.pcard[data-ci="${ci}"]`);
   if (S && S.buildInfo && Object.keys(S.buildInfo).length) { showCardPop(ci, anchor); hideTip(); return; }
   const txt = card.kind === "WILD"
-    ? `Wild card: ${card.v === "REGION" ? "any region" : "any industry"}; expires at era end`
+    ? `万用牌：视为${card.v === "REGION" ? "任意区域" : "任意产业"}，本时代结束作废`
     : card.kind === "REGION"
-      ? `Region card: ${T(card.label)} — ${t.size} buildable cities${rest && rest.length ? ` (${rest.length} other cities are outside your network or full, marked with dashed lines)` : ""}`
-      : `Industry card: ${t.size} buildable cities in your network`;
-  showTip(`<b>${T(card.label)}</b><div class="sl">${txt}</div>` +
-    (t.size ? `<div class="sl" style="margin-top:3px">${[...t].slice(0, 8).map(cityZh).join(", ")}${t.size > 8 ? " etc." : ""}</div>` : ""));
+      ? `区域牌：${card.label}可建 ${t.size} 城${rest && rest.length ? `（另 ${rest.length} 城不在网络内或已满，虚线标出）` : ""}`
+      : `产业牌：网络内可建 ${t.size} 城`;
+  showTip(`<b>${card.label}</b><div class="sl">${txt}</div>` +
+    (t.size ? `<div class="sl" style="margin-top:3px">${[...t].slice(0, 8).map(cityZh).join("、")}${t.size > 8 ? " 等" : ""}</div>` : ""));
 }
 
 // ---------- 行动 ----------
@@ -466,19 +440,17 @@ function srcHTML(a) {
   a = viewAction(a);
   const parts = [];
   ["coal", "iron", "prov"].forEach(r => {
-    (a[r] || []).forEach(s => parts.push(`${cubeHTML(r, 11)}${s.mine ? "Your own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n}`));
+    (a[r] || []).forEach(s => parts.push(`${cubeHTML(r, 11)}${s.mine ? "自有" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n}`));
   });
-  if (a.mktCoal) parts.push(`${cubeHTML("coal", 11)}Market×${a.mktCoal}`);
-  if (a.mktIron) parts.push(`${cubeHTML("iron", 11)}Market×${a.mktIron}`);
+  if (a.mktCoal) parts.push(`${cubeHTML("coal", 11)}市场×${a.mktCoal}`);
+  if (a.mktIron) parts.push(`${cubeHTML("iron", 11)}市场×${a.mktIron}`);
   return parts.join(" ");
 }
 function actTitle(a) {
-  if (a.kind === "CLEAN_UP") return cityZh(a.city);
-  if (a.kind === "ECO_UPGRADE") return `${T(B.industryZh[a.industry])} · ${cityZh(a.city)}`;
   // 动作类别由标签页 / 确认条前缀给出，这里只写对象，避免「侦查：侦查…」这样的叠字
   const lv = ROMAN[a.level] || "";
-  if (a.kind === "BUILD") return `${T(B.industryZh[a.industry])} ${lv} <span class="c">·</span> ${cityZh(a.city)}` +
-    (a.over ? ` <span class="c">Overbuild ${a.over.mine ? "" : "Opponent’s "}${T(B.industryZh[a.over.industry])}${ROMAN[a.over.level] || ""}</span>` : "");
+  if (a.kind === "BUILD") return `${B.industryZh[a.industry]}${lv} <span class="c">·</span> ${cityZh(a.city)}` +
+    (a.over ? ` <span class="c">覆盖${a.over.mine ? "" : "对手的"}${B.industryZh[a.over.industry]}${ROMAN[a.over.level] || ""}</span>` : "");
   if (a.kind === "NETWORK") {
     let t = `${cityZh(a.link[0])}—${cityZh(a.link[1])}`;
     if (a.second) t += ` <span class="c">+</span> ${cityZh(a.second[0])}—${cityZh(a.second[1])}`;
@@ -486,31 +458,27 @@ function actTitle(a) {
   }
   if (a.kind === "SELL") {
     if (a.sells && a.sells.length > 1)
-      return `${a.sells.length} industries <span class="c"> (${a.sells.map(s => T(B.industryZh[s.industry]) + (ROMAN[s.level] || "")).join(", ")})</span>`;
-    return `${T(B.industryZh[a.industry])} ${lv} <span class="c">·</span> ${cityZh(a.city)}`;
+      return `${a.sells.length} 件 <span class="c">（${a.sells.map(s => B.industryZh[s.industry] + (ROMAN[s.level] || "")).join("、")}）</span>`;
+    return `${B.industryZh[a.industry]}${lv} <span class="c">·</span> ${cityZh(a.city)}`;
   }
-  if (a.kind === "DEVELOP") return (a.dev || [a]).map(d => T(B.industryZh[d.industry]) + (ROMAN[d.level] || "")).join(", ");
-  if (a.kind === "LOAN") return "£30";
+  if (a.kind === "DEVELOP") return (a.dev || [a]).map(d => B.industryZh[d.industry] + (ROMAN[d.level] || "")).join("、");
+  if (a.kind === "LOAN") return "$30";
   return "Discard 3 cards to draw 2 wild cards.";
 }
 function actGain(a) {
-  if (a.kind === "CLEAN_UP") return `Pollution ${a.pollutionBefore} → ${a.pollutionAfter} · 1 action + discard`;
-  if (a.kind === "ECO_UPGRADE") return `Sale emissions → ${a.emissionsAfter} · +2 green points when sold`;
   if (a.kind === "BUILD") {
-    const bits = [`${a.vp} VP`, `Income +${a.income}`];
-    if (a.produces) bits.push(`Output ${a.produces}`);
-    if (a.pollutionFee) bits.push(`Pollution fee +£${a.pollutionFee}`);
-    if (a.linkVp) bits.push(`Links ${a.linkVp}`);
+    const bits = [`${a.vp} 分`, `收入 +${a.income}`];
+    if (a.produces) bits.push(`产 ${a.produces}`);
+    if (a.linkVp) bits.push(`连线 ${a.linkVp}`);
     if (a.mktSale) bits.push(mktSaleText(a.mktSale, true));
     return bits.join(" · ");
   }
-  if (a.kind === "SELL" && a.ecoPreview) return `Income +${a.income} steps · ${a.vp} VP at era end · ` + a.ecoPreview.map(q => `${cityZh(q.city)} pollution ${q.before} → ${q.after}`).join("; ") + ` · Green +${a.greenGain}`;
-  if (a.kind === "SELL") return `${a.vp} VP at era end · Income +${a.income}` + (a.hub ? ` · via ${T(a.hub.zh)}` + (a.hub.bonus ? ` (Port bonus: ${BONUS_FULL[a.hub.bonus]})` : "") : "") +
-    (a.hubProv ? ` · Port beer ×${a.hubProv}` : "");
-  if (a.kind === "NETWORK") return (isSeaLink(a.link) ? "Shipping" : "Land route") + (a.second ? " · Double connection" : "");
-  if (a.kind === "LOAN") return "Income −3 levels";
-  if (a.kind === "DEVELOP") return `Remove ${(a.dev || [a]).length} industry tiles; 1 iron each`;
-  return "Wild cards count as any region / industry";
+  if (a.kind === "SELL") return `时代末 ${a.vp} 分 · 收入 +${a.income}` + (a.hub ? ` · 经${a.hub.zh}` + (a.hub.bonus ? `（港口奖励：${BONUS_FULL[a.hub.bonus]}）` : "") : "") +
+    (a.hubProv ? ` · 港内啤酒 ×${a.hubProv}` : "");
+  if (a.kind === "NETWORK") return (isSeaLink(a.link) ? "海运" : "陆路") + (a.second ? " · 双铺" : "");
+  if (a.kind === "LOAN") return "收入 −3 级";
+  if (a.kind === "DEVELOP") return `移除 ${(a.dev || [a]).length} 块板件，每块 1 铁`;
+  return "万用牌视为任意区域 / 产业";
 }
 function groupActs() {
   const g = {}; (S.actions || []).forEach(a => (g[a.kind] = g[a.kind] || []).push(a));
@@ -542,43 +510,32 @@ function explainMove(action) {
 
     case "SCOUT":
       return "Scouting lets you discard 3 cards to gain wild cards, giving you more flexibility when building industries in different regions.";
-
+    
     default:
       return "This move may help improve your position. Check its cost and effects before choosing.";
   }
 }
 
 
-function showEcoSellSelection() {
-  const candidates = S.placed.filter(t => t.owner === me(S).id && !t.flipped && ["COTTON", "MFG", "LUX"].includes(t.industry));
-  const d = modal(`<h2>Sell selected factories</h2><p>Select factories and one matching trade port. The server checks routes, acceptance and shared beer before selling anything.</p><div class="eco-sell-options">${candidates.map((t,i) => `<label><input type="checkbox" data-tile="${t.id}"> ${T(B.industryZh[t.industry])} · ${cityZh(t.city)}</label>`).join("")}</div><label>Trade port <select id="ecoHub">${S.hubs.filter(h=>h.open).map(h=>`<option value="${h.id}">${cityZh(h.city)} · ${h.accepts.map(i=>T(B.industryZh[i])).join(" / ")}</option>`).join("")}</select></label><label>Discard <select id="ecoDiscard">${S.hand.map((c,i)=>`<option value="${i}">${T(c.label)}</option>`).join("")}</select></label><p>Uses 1 action. Port beer is used first; own and connected opponent beer follow. For manual beer choices use individual/pair Sell plans.</p><div class="btns"><button id="ecoSellCancel">Cancel</button><button class="primary" id="ecoSellGo">Confirm selected sale</button></div>`);
-  d.querySelector("#ecoSellCancel").onclick = () => d.remove();
-  d.querySelector("#ecoSellGo").onclick = async () => {
-    const ids=[...d.querySelectorAll("input[data-tile]:checked")].map(e=>e.dataset.tile);
-    if (!ids.length) return toast("Select at least one factory.");
-    const body={sellIds:ids,hubId:d.querySelector("#ecoHub").value,discard:[+d.querySelector("#ecoDiscard").value]};
-    d.remove(); await submit("/api/action",body);
-  };
-}
 function renderActions() {
   const st = S;
   const tabs = $("#acttabs"), list = $("#actlist");
-  if (!st || UI.playing) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">Other players are taking their turns…</div>`; $("#confirm").classList.add("hide"); return; }
-  if (st.over) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">The game has ended</div>`; return; }
+  if (!st || UI.playing) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">其他玩家行动中…</div>`; $("#confirm").classList.add("hide"); return; }
+  if (st.over) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">对局已结束</div>`; return; }
   const myTurn = st.active === me(st).id;
   const g = groupActs();
   const nAct = st.actions.filter(a => !(a.kind === "DEVELOP" && a.dev && a.dev.length > 1)).length;
   $("#actCount").textContent = myTurn && nAct ? nAct : "";
-  if (!myTurn) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">Waiting for other players…</div>`; return; }
+  if (!myTurn) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">等待其他玩家…</div>`; return; }
   const kinds = KIND_ORDER.filter(k => g[k]);
   const best = st.actions.find(a => a.best);
   const player = me(st);
 
   const advisorMessage = best
     ? `★ Strategy Advisor
-      Current Money: £${player.money}
+      Current Money: $${player.money}
       Recommended Action: ${best.kind}
-      Action Cost: £${best.cost ?? 0}
+      Action Cost: $${best.cost ?? 0}
 
       ${explainMove(best)}`
     : "";
@@ -594,8 +551,8 @@ function renderActions() {
     const n = UI.filter ? filtered(g[k]).length : k === "DEVELOP" ? g[k].filter(a => !a.dev || a.dev.length === 1).length : g[k].length;
     return `<button type="button" data-k="${k}" class="${k === UI.tab ? "on" : ""}" aria-pressed="${k === UI.tab}">${KIND_ZH[k]}${best && best.kind === k ? "★" : ""}<span class="n">${n}</span></button>`;
   }).join("") +
-    (fk ? `<button class="filter" id="clearFilter">Filter: ${fk.city ? cityZh(fk.city) : fk.link.split("|").map(cityZh).join("—")} ✕</button>` : "") +
-    `<button class="${st.actions.length ? "" : "primary "}passbtn" id="passbtn" title="Pass this action and discard one card">Pass</button>`;
+    (fk ? `<button class="filter" id="clearFilter">筛选：${fk.city ? cityZh(fk.city) : fk.link.split("|").map(cityZh).join("—")} ✕</button>` : "") +
+    `<button class="${st.actions.length ? "" : "primary "}passbtn" id="passbtn" title="不执行动作，弃 1 张牌">跳过</button>`;
   if (UI.tab === "DEVELOP" && !UI.filter) { list.innerHTML = devPickerHTML(g.DEVELOP, best); renderConfirm(); return; }
   let items = filtered(g[UI.tab] || []);
   if (UI.tab === "BUILD") items.sort((a, b) => IND_ORDER.indexOf(a.industry) - IND_ORDER.indexOf(b.industry) || a.cost - b.cost);
@@ -608,8 +565,8 @@ function renderActions() {
       <span class="body"><span class="tx">${actTitle(a)}</span>
         <span class="gain">${actGain(a)}</span>
         ${srcHTML(a) ? `<span class="src">${srcHTML(a)}</span>` : ""}</span>
-      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "£" + a.cost : "Free"}</span></button>`).join("")
-    : `<div class="empty">${UI.filter ? "No matching actions here" : "No actions available"}</div>`;
+      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "$" + a.cost : "免费"}</span></button>`).join("")
+    : `<div class="empty">${UI.filter ? "此处无该类动作" : "无可执行动作"}</div>`;
   if (advisorMessage) {
     list.insertAdjacentHTML(
       "afterbegin",
@@ -620,9 +577,6 @@ function renderActions() {
     );
   }
 
-    if (st.eco && UI.tab === "SELL") {
-      const multi=document.createElement("button"); multi.textContent="Choose factories to sell together"; multi.className="eco-multi"; multi.onclick=showEcoSellSelection; list.prepend(multi);
-    }
     renderConfirm();
 
 }
@@ -640,13 +594,13 @@ function devPickerHTML(acts, best) {
   const btns = singles.map(a => {
     const n = p.filter(x => x === a.industry).length;
     const two = acts.find(x => x.dev && x.dev.length === 2 && x.dev.every(d => d.industry === a.industry));
-    const lv = n === 2 && two ? two.dev.map(d => ROMAN[d.level]).join(", ") : ROMAN[a.level];
+    const lv = n === 2 && two ? two.dev.map(d => ROMAN[d.level]).join("、") : ROMAN[a.level];
     return `<button type="button" class="dpk ${n ? "on" : ""}" data-dind="${a.industry}">${actThumb(a)}
-      <span class="nm">${T(B.industryZh[a.industry])} ${lv}${bestInds.includes(a.industry) ? "★" : ""}</span>
+      <span class="nm">${B.industryZh[a.industry]}${lv}${bestInds.includes(a.industry) ? "★" : ""}</span>
       ${n === 2 ? `<span class="x2">×2</span>` : ""}</button>`;
   }).join("");
   let note = "Choose 1–2 industry tiles to remove. Pay 1 iron per tile. You may select the same industry twice.";
-  if (p.length && !devAction(p)) note = "This combination is unavailable: insufficient cash for 2 iron.";
+  if (p.length && !devAction(p)) note = "该组合不可执行：现金不足以支付 2 块铁。";
   return `<div class="dpick"><div class="dnote">${note}</div><div class="dbtns">${btns}</div></div>`;
 }
 function devClick(ind) {
@@ -706,22 +660,22 @@ function beerHTML(a) {
   const r = beerPlan(a, UI.beer);
   const chips = b.options.map(o => {
     const on = UI.beer.includes(o.key), use = r.used[o.key] || 0;
-    const who = o.kind === "hub" ? `At the port·${T(o.zh)}` : `${o.mine ? "Your own" : pname(S, o.owner)}·${cityZh(o.city)}`;
+    const who = o.kind === "hub" ? `港内·${o.zh}` : `${o.mine ? "自有" : pname(S, o.owner)}·${cityZh(o.city)}`;
     const dot = o.kind === "hub" ? "" : `<i class="pdot" style="background:${PCOL[o.owner]}"></i>`;
-    const tip = o.kind === "hub" ? "Use port beer to receive the port bonus" : o.mine ? "Your brewery flips when depleted, earning you victory points and income" : "Your rival’s brewery flips when depleted, earning its owner victory points and income";
+    const tip = o.kind === "hub" ? "港内啤酒：用掉即得港口奖励" : o.mine ? "你的酿酒厂：啤酒取完后翻面，你得分和收入" : "对手的酿酒厂：啤酒取完后翻面，对手得分和收入";
     return `<button type="button" class="dchip beerchip ${on ? "on" : ""}" data-bk="${o.key}" title="${tip}">${dot}${who} ${cubeHTML("prov", 10)}${on ? `${use}/${o.n}` : o.n}</button>`;
   }).join("");
-  const note = r.short ? `<span class="dwarn">${r.short} more beer needed</span>` : "";
-  return `<div class="dsel"><span class="dl">Beer: ${b.need} required, used in selection order</span>${chips}${note}</div>`;
+  const note = r.short ? `<span class="dwarn">还差 ${r.short} 桶</span>` : "";
+  return `<div class="dsel"><span class="dl">啤酒（需 ${b.need} 桶，按点选顺序取用）</span>${chips}${note}</div>`;
 }
 function pickBeer(k) {
   UI.beer = UI.beer.includes(k) ? UI.beer.filter(x => x !== k) : [...UI.beer, k];
   renderConfirm(); previewSel();
 }
 function mktSaleText(m, short) {
-  if (m.n) return short ? `Sells ${m.n} to market for £${m.money}` : `Sells ${m.n} resources to market when built, earning £${m.money}`;
-  if (m.why === "nohub") return short ? "No open port connection; no market sale" : "No connection to an open trade port: coal stays on the tile. Market sales happen only when built; connecting later does not trigger a sale.";
-  return short ? "Market full" : "Market full: output stays on the tile";
+  if (m.n) return short ? `建成售市场 ×${m.n} $${m.money}` : `建成时卖给市场 ${m.n} 块，得 $${m.money}`;
+  if (m.why === "nohub") return short ? "不连港，不售市场" : "此处未连通开张的贸易港：煤留在板件上，不卖给市场（只在建成时卖一次，之后连通也不会补卖）";
+  return short ? "市场已满" : "市场已满：产出留在板件上";
 }
 // ---------- 「我的」：高亮自己的产业，其余城市与对手的板件压暗 ----------
 function showMine(st, fit) {
@@ -729,7 +683,7 @@ function showMine(st, fit) {
   map.setTargets(ids.length ? ids : null, "mine");
   $("#map").classList.toggle("showmine", ids.length > 0);
   if (fit && ids.length) map.fitCities(ids, 1.4, 14);
-  if (!ids.length && fit) toast("You have no industries on the map yet");
+  if (!ids.length && fit) toast("你在地图上还没有产业");
 }
 function baseTargets() {
   if (UI.mine && S && S.started) { showMine(V() || S, false); return; }
@@ -748,9 +702,9 @@ function setMine(on, fit = false) {
 function devBonusHTML(a) {
   const d = a && a.devBonus; if (!d || !devBonusLive(a)) return "";
   const cur = UI.devBonus[0];
-  const chips = d.options.map(o => `<button type="button" class="dchip bchip ${cur === o.industry ? "on" : ""}" data-db="${o.industry}">${T(B.industryZh[o.industry])}${ROMAN[o.level] || ""}</button>`).join("") +
+  const chips = d.options.map(o => `<button type="button" class="dchip bchip ${cur === o.industry ? "on" : ""}" data-db="${o.industry}">${B.industryZh[o.industry]}${ROMAN[o.level] || ""}</button>`).join("") +
     `<button type="button" class="dchip bchip ${cur === "" ? "on" : ""}" data-db="">Discard</button>`;
-  return `<div class="dsel"><span class="dl bl">Port bonus: Free development</span>${chips}</div>`;
+  return `<div class="dsel"><span class="dl bl">港口奖励：免费开发</span>${chips}</div>`;
 }
 function selAction() { return S && UI.sel !== null ? S.actions.find(a => a.i === UI.sel) : null; }
 // ---------- 弃牌（伯明翰规则：每个动作弃 1 张，由玩家选；建造须弃对应的牌；侦查弃 3 张） ----------
@@ -764,7 +718,7 @@ function discardHTML() {
   const d = discardSpec(); if (!d) return "";
   const chips = d.allowed.map(i => {
     const c = S.hand[i]; if (!c) return "";
-    return `<button type="button" class="dchip ${UI.discard.includes(i) ? "on" : ""} ${c.kind === "WILD" ? "wild" : ""}" data-di="${i}">${T(c.label)}</button>`;
+    return `<button type="button" class="dchip ${UI.discard.includes(i) ? "on" : ""} ${c.kind === "WILD" ? "wild" : ""}" data-di="${i}">${c.label}</button>`;
   }).join("");
   return `<div class="dsel"><span class="dl">Discard${d.n > 1 ? ` (Select ${d.n} cards)` : ""}</span>${chips}</div>`;
 }
@@ -786,20 +740,20 @@ function go() {
 function renderConfirm() {
   const a = selAction(), box = $("#confirm");
   if (UI.passMode && S) {
-    box.innerHTML = `<div class="ct"><div class="t1">Pass</div><div class="t2">Take no action; discard 1 card</div>${discardHTML()}</div>
-      <button id="btnCancel">Cancel</button><button class="primary" id="btnGo">Confirm ⏎</button>`;
+    box.innerHTML = `<div class="ct"><div class="t1">跳过</div><div class="t2">不执行动作，仅弃 1 张牌</div>${discardHTML()}</div>
+      <button id="btnCancel">取消</button><button class="primary" id="btnGo">确认 ⏎</button>`;
     box.classList.remove("hide"); return;
   }
   if (!a) { box.classList.add("hide"); return; }
-  const cost = a.cost ? `£${a.cost}` : "Free";
+  const cost = a.cost ? `$${a.cost}` : "免费";
   const detail = [];
-  if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`Tiles £${a.base}`);
-  if (a.mktCash && a.kind !== "DEVELOP") detail.push(`Resources £${a.mktCash}`);
-  box.innerHTML = `<div class="ct"><div class="t1">${KIND_ZH[a.kind]}: ${actTitle(a)}</div>
-      <div class="t2"><b style="color:var(--gold2)">${cost}</b>${detail.length ? ` (${detail.join(" + ")})` : ""} · ${actGain(viewAction(a))} ${srcHTML(a) ? " · " + srcHTML(a) : ""}</div>
+  if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`板件 $${a.base}`);
+  if (a.mktCash && a.kind !== "DEVELOP") detail.push(`购料 $${a.mktCash}`);
+  box.innerHTML = `<div class="ct"><div class="t1">${KIND_ZH[a.kind]}：${actTitle(a)}</div>
+      <div class="t2"><b style="color:var(--gold2)">${cost}</b>${detail.length ? `（${detail.join(" + ")}）` : ""} · ${actGain(viewAction(a))} ${srcHTML(a) ? " · " + srcHTML(a) : ""}</div>
       ${a.mktSale ? `<div class="t2 msale">${mktSaleText(a.mktSale, false)}</div>` : ""}
       ${beerHTML(a)}${devBonusHTML(a)}${discardHTML()}</div>
-    <button id="btnCancel">Cancel</button><button class="primary" id="btnGo" ${discardReady() && beerReady() ? "" : "disabled"}>Confirm ⏎</button>`;
+    <button id="btnCancel">取消</button><button class="primary" id="btnGo" ${discardReady() && beerReady() ? "" : "disabled"}>确认 ⏎</button>`;
   box.classList.remove("hide");
 }
 function previewSel() {
@@ -831,80 +785,21 @@ function clearSel() {
   $$("#actlist .act.sel").forEach(b => b.classList.remove("sel"));
 }
 
-// ---------- 板件（玩家面板） ----------
-function anyNoDev() { return !!B && Object.values(B.tiles).some(ts => ts.some(t => t.noDev)); }
-function nextTile(p, ind) {
-  const sup = p.supply[ind] || {};
-  const lv = Object.keys(sup).map(Number).filter(l => sup[l] > 0).sort((a, b) => a - b)[0];
-  return lv ? B.tiles[ind].find(t => t.level === lv) : null;
-}
-function needHTML(t) {
-  const n = [];
-  for (let i = 0; i < t.coal; i++) n.push(cubeHTML("coal", 11));
-  for (let i = 0; i < t.iron; i++) n.push(cubeHTML("iron", 11));
-  if (t.sellProv) n.push(`<span title="Beer needed to sell">Sell${cubeHTML("prov", 11)}${t.sellProv > 1 ? "×" + t.sellProv : ""}</span>`);
-  return n.join("") || "—";
-}
-function renderMat(st) {
-  const p = me(st);
-  $("#mat").innerHTML = IND_ORDER.map(ind => {
-    const t = nextTile(p, ind);
-    const left = Object.values(p.supply[ind] || {}).reduce((a, b) => a + b, 0);
-    if (!t) return `<div class="mrow2 off"><span class="bi" style="${artCSS(IND_ART[ind])}"></span><span class="bn">${T(B.industryZh[ind])}</span><span></span><span></span><span class="need">Depleted</span><span></span><span></span></div>`;
-    const ok = t.era === "BOTH" || t.era === st.era;
-    return `<div class="mrow2 ${ok ? "" : "off"}" title="${T(B.industryZh[ind])} ${ROMAN[t.level]}: Cost £${t.cost} · ${t.vp} VP · Income +${t.income} · Links ${t.linkVp}${t.noDev ? " · Cannot be developed" : ""}${ok ? "" : ` (Unavailable in the ${T(st.eraZh)}; develop first)`}">
-      <span class="bi" style="${artCSS(IND_ART[ind])}"></span><span class="bn">${T(B.industryZh[ind])}</span>
-      <span class="lv${t.noDev ? " nd" : ""}">${ROMAN[t.level]}</span><span class="cost">£${t.cost}</span>
-      <span class="need">${needHTML(t)}${ok ? "" : ` <span class="warn">Development required</span>`}</span>
-      <span class="give">${t.vp} VP +${t.income}</span><span class="left">×${left}</span></div>`;
-  }).join("");
-}
-function showMatModal(pid) {
-  const st = V();
-  let cur = pid === undefined ? me(st).id : pid;
-  const d = document.createElement("div"); d.className = "overlay";
-  const draw = () => {
-    const p = st.players.find(x => x.id === cur);
-    d.innerHTML = `<div class="modal wide"><button class="x">✕</button><h2>Industry board</h2>
-      <div class="sub">Use tiles in level order. A gold border marks the next tile. Sail: Sail Era only; Steam: Steam Era only${anyNoDev() ? "; Cannot be developed: must be built" : ""}.</div>
-      <div class="mattabs">${st.players.map(q => `<button data-p="${q.id}" class="${q.id === cur ? "on" : ""}">${avatarHTML(q.avatar, PCOL[q.id], 24)}${T(q.name)}</button>`).join("")}</div>
-      <div class="matgrid">${IND_ORDER.map(ind => {
-        const sup = p.supply[ind] || {}, nt = nextTile(p, ind);
-        return `<div class="mcol"><h4><span class="bi" style="${artCSS(IND_ART[ind])}"></span>${T(B.industryZh[ind])}</h4>` +
-          B.tiles[ind].map(t => {
-            const left = sup[t.level] || 0;
-            const era = t.era === "E1" ? "Sail" : t.era === "E2" ? "Steam" : "";
-            return `<div class="tcard ${nt && nt.level === t.level ? "next" : ""} ${left ? "" : "gone"}">
-              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}<span class="c">£${t.cost}</span></div>${t.noDev ? `<div class="nodev-note" title="Must build this tile to unlock the next level">Cannot be developed</div>` : ""}
-              <div class="r">${needHTML(t)}</div>
-              <div class="r"><span><b>${t.vp}</b>VP</span><span>· Income<b>+${t.income}</b></span><span>· Links<b>${t.linkVp}</b></span>${ind === "PROV" ? `<span title="Output when built in the Sail Era 1 beer, Output when built in the Steam Era 2 beer">· Beer output<b>1</b>/<b>2</b></span>` : t.produces ? `<span>· Output: ${ind === "COAL" ? "Coal" : "Iron"}<b>${t.produces}</b></span>` : ""}</div>
-              <span class="cnt">×${left}/${t.copies}</span></div>`;
-          }).join("") + `</div>`;
-      }).join("")}</div>
-      <div class="legend">${cubeHTML("coal", 12)} Coal used　${cubeHTML("iron", 12)} Iron used　Sell${cubeHTML("prov", 12)} Beer needed to sell<br>Links: After flipping the tile, Victory points added to each link connected to this city at era end (Awarded to the link’s owner)<br>Coal output / Iron output / Beer output: Resources placed on the tile when built, Flips when depleted (1 beer in the Sail Era; 2 in the Steam Era)</div></div>`;
-    d.querySelector(".x").onclick = () => d.remove();
-    d.querySelectorAll(".mattabs button").forEach(b => b.onclick = () => { cur = +b.dataset.p; draw(); });
-  };
-  draw();
-  d.addEventListener("click", e => { if (e.target === d) d.remove(); });
-  document.body.appendChild(d);
-}
-
 // ---------- 记录 ----------
 function logHTML(st) {
   let lastRound = null;
   return st.log.map(l => {
-    const p = st.players.find(x => x.name === l.who || T(x.name) === l.who);
+    const p = st.players.find(x => x.name === l.who);
     let sep = "";
     // 每一轮（包括第 1 轮）都有标题；开局的本土分配不算在任何一轮里
     const rk = l.who === "setup" || /^(★|最终排名)/.test(l.text) ? null : `${l.era}-${l.round}`;
     if (l.round !== undefined && rk !== null && rk !== lastRound)
-      sep = `<div class="le round">${l.era === "E2" ? "Steam Era" : "Sail Era"}, Round ${l.round}</div>`;
+      sep = `<div class="le round">${l.era === "E2" ? "蒸汽时代" : "帆船时代"} 第 ${l.round} 轮</div>`;
     if (rk !== null) lastRound = rk;
     return sep + `<div class="le ${l.who === "system" || l.who === "setup" ? "sys" : ""} ${l._new ? "new" : ""} ${l.at ? "loc" : ""}"` +
-      (l.at ? ` data-at="${l.at.join(",")}" title="Click to locate"` : "") + `>` +
-      (p ? `<span class="who" style="color:${PCOL[p.id]}">${T(l.who)}</span>` : "") + T(l.text) +
-      (l.why ? ` <span class="why">« ${T(l.why)}</span>` : "") + `</div>`;
+      (l.at ? ` data-at="${l.at.join(",")}" title="点击定位"` : "") + `>` +
+      (p ? `<span class="who" style="color:${PCOL[p.id]}">${l.who}</span>` : "") + l.text +
+      (l.why ? ` <span class="why">« ${l.why}</span>` : "") + `</div>`;
   }).join("");
 }
 function renderLog(st) {
@@ -923,19 +818,19 @@ function renderHint() {
     const sell = st.actions.filter(a => a.kind === "SELL").length;
     const dead = st.placed.filter(p => p.owner === m.id && !p.flipped && ["COTTON", "MFG", "LUX"].includes(p.industry)).length;
     if (!myTurn) h = "";
-    else if (!st.actions.length) h = "No actions available. You must pass.";
-    else if (sell) h = `${sell} industries can sell`;
-    else if (!hubs) h = "Connect to an open trade port to sell goods or buy market coal. A port opens when a built link reaches its city.";
-    else if (dead >= 2) h = `${dead} unsold industries will not score at era end`;
-    else if (m.money < 6) h = "Low cash: loans cost least when income is low";
-    else if (st.deck < 12 && st.era === "E1") h = "The Sail Era is ending: level I tiles and all links will be removed";
+    else if (!st.actions.length) h = "无可执行动作，只能跳过";
+    else if (sell) h = `${sell} 件货物可销售`;
+    else if (!hubs) h = "网络未连通开张的贸易港：无法销售，也无法从市场购煤。贸易港须有连线接入才开张";
+    else if (dead >= 2) h = `${dead} 件货物未售出，时代末不计分`;
+    else if (m.money < 6) h = "现金不足：收入低时贷款代价最小";
+    else if (st.deck < 12 && st.era === "E1") h = "帆船时代即将结束：Ⅰ级板件与全部连线将被清除";
     else {
       const unlinked = st.players.filter(q => !q.isMe && !(st.linkedPairs || []).some(k => k.includes(m.id) && k.includes(q.id)));
-      if (unlinked.length && st.round <= 4) h = `Connect your network to ${T(unlinked[0].name)}: each of you receives $8 and +1 income`;
+      if (unlinked.length && st.round <= 4) h = `与 ${unlinked[0].name} 网络互通：双方各得 $8、收入 +1`;
     }
   }
   el.textContent = h;
-  el.classList.toggle("hint-port", h.startsWith("Connect to an open trade port to sell goods or buy market coal."));
+  el.classList.toggle("hint-port", h.includes("网络未连通开张的贸易港"));
   el.classList.toggle("hide", !h);
 }
 
@@ -945,48 +840,47 @@ function hideTip() { $("#tip").classList.add("hide"); }
 function cityTip(id) {
   const st = V(), c = city(id); if (!c) return;
   const tiles = st.placed.filter(p => p.city === id);
-  let h = `<b>${T(c.zh)}</b> <span class="sl">${c.en} · ${T(c.regionZh)}${c.port ? " · Port" : ""}</span>`;
-  if (st.eco) { const pollution = st.eco.pollution[id] || 0; h += `<div class="eco-tip">Pollution ${pollution}/10 · ${pollution >= 6 ? "Build fee +£5" : "No pollution fee"}</div>`; }
+  let h = `<b>${c.zh}</b> <span class="sl">${c.en} · ${c.regionZh}${c.port ? " · 港口" : ""}</span>`;
   h += c.slots.map((s, i) => {
     const t = tiles.find(p => p.slot === i);
     if (t) {
       const res = t.resources && ["COAL", "IRON", "PROV"].includes(t.industry)
-        ? ` · Stock ${cubeHTML(t.industry === "COAL" ? "coal" : t.industry === "IRON" ? "iron" : "prov", 11)}×${t.resources}` : "";
-      return `<div class="row" style="color:${PCOL[t.owner]}">${iconHTML(t.industry, 13, PCOL[t.owner])} ${T(B.industryZh[t.industry])}${ROMAN[t.level]}
-        <span class="sl">${t.flipped ? "Flipped" : "Unflipped"} · ${pname(st, t.owner)}${res}${t.ecoUpgraded ? " · Eco upgraded" : ""}</span></div>`;
+        ? ` · 存货 ${cubeHTML(t.industry === "COAL" ? "coal" : t.industry === "IRON" ? "iron" : "prov", 11)}×${t.resources}` : "";
+      return `<div class="row" style="color:${PCOL[t.owner]}">${iconHTML(t.industry, 13, PCOL[t.owner])} ${B.industryZh[t.industry]}${ROMAN[t.level]}
+        <span class="sl">${t.flipped ? "已翻面" : "未翻面"} · ${pname(st, t.owner)}${res}</span></div>`;
     }
-    return `<div class="row sl">${s.map(x => iconHTML(x, 12, "#8f826a") + T(B.industryZh[x])).join(" / ")} · Unoccupied</div>`;
+    return `<div class="row sl">${s.map(x => iconHTML(x, 12, "#8f826a") + B.industryZh[x]).join(" / ")} · 未被占用</div>`;
   }).join("");
   // 轮到你时：这里的空格能建哪些产业、每种多少钱、建不了卡在哪（同一产业只说一次）
   if (S && S.buildInfo && !UI.playing && S.active === me(S).id) {
     const taken = new Set(tiles.map(t => t.slot));
     const inds = [...new Set(c.slots.filter((s, i) => !taken.has(i)).flat())];
-    if (inds.length) h += `<div class="sl" style="margin-top:5px;color:var(--gold)">Buildable: </div>` + inds.map(ind => {
+    if (inds.length) h += `<div class="sl" style="margin-top:5px;color:var(--gold)">可建：</div>` + inds.map(ind => {
       const bs = buildStatus(id, ind);
-      return `<div class="tipst ${bs.ok ? "ok" : "no"}">${bs.ok ? "✓" : "✗"} ${T(B.industryZh[ind])}${bs.e && bs.e.money != null ? ` £${bs.e.money}` : ""}${bs.ok ? "" : ": " + bs.why}</div>`;
+      return `<div class="tipst ${bs.ok ? "ok" : "no"}">${bs.ok ? "✓" : "✗"} ${B.industryZh[ind]}${bs.e && bs.e.money != null ? ` $${bs.e.money}` : ""}${bs.ok ? "" : "：" + bs.why}</div>`;
     }).join("");
   }
   const hub = (st.hubs || []).find(x => x.city === id && x.active);
   if (hub) {
     const claimed = hub.claimedBy !== null && hub.claimedBy !== undefined;
-    h += `<div class="row" style="color:var(--gold);margin-top:5px">⚓ ${T(hub.zh)}: Accepts ${hub.accepts.map(a => B.industryZh[a]).join(" / ")}</div>` +
-      `<div class="sl">Port beer ${cubeHTML("prov", 11)}×${hub.prov || 0} (Use first when selling to this port, Refilled each era)</div>` +
-      `<div class="sl">Port bonus: <b style="color:var(--gold2);font-size:12px;letter-spacing:0">${BONUS_FULL[hub.bonus] || "—"}</b>` +
-      (hub.prov ? " (Awarded when you sell using this port’s beer)" : claimed ? ` <span style="color:${PCOL[hub.claimedBy]}">Claimed this era by ${pname(st, hub.claimedBy)}</span>` : " (None left this era)") + `</div>`;
+    h += `<div class="row" style="color:var(--gold);margin-top:5px">⚓ ${hub.zh}：收购 ${hub.accepts.map(a => B.industryZh[a]).join(" / ")}</div>` +
+      `<div class="sl">港内啤酒 ${cubeHTML("prov", 11)}×${hub.prov || 0}（售予此港时优先使用，每个时代补满）</div>` +
+      `<div class="sl">港口奖励：<b style="color:var(--gold2);font-size:12px;letter-spacing:0">${BONUS_FULL[hub.bonus] || "—"}</b>` +
+      (hub.prov ? "（用港内啤酒销售即得）" : claimed ? ` <span style="color:${PCOL[hub.claimedBy]}">本时代已由 ${pname(st, hub.claimedBy)} 领取</span>` : "（本时代已无）") + `</div>`;
   }
   const n = S && S.actions ? S.actions.filter(a => a.city === id).length : 0;
-  if (n && !UI.playing) h += `<div class="sl" style="margin-top:4px;color:var(--gold)">Click to view ${n} available actions</div>`;
+  if (n && !UI.playing) h += `<div class="sl" style="margin-top:4px;color:var(--gold)">点击查看 ${n} 个可选动作</div>`;
   showTip(h);
 }
 function linkTip(key) {
   const [a, b] = key.split("|"), l = B.links.find(x => [x.a, x.b].sort().join("|") === key); if (!l) return;
   const st = V(), bl = (st.builtLinks || []).find(x => [x.a, x.b].sort().join("|") === key);
-  const era = l.era === "E1" ? "Sail Era only" : l.era === "E2" ? "Steam Era only" : "Two eras";
+  const era = l.era === "E1" ? "仅帆船时代" : l.era === "E2" ? "仅蒸汽时代" : "两个时代";
   const cost = B.linkCost[`${st.era}_${l.sea ? "sea" : "land"}`];
-  let h = `<b>${cityZh(a)} — ${cityZh(b)}</b> <span class="sl">${l.sea ? "Shipping" : "Land route"} · ${era}</span>`;
-  if (bl) h += `<div class="row" style="color:${PCOL[bl.owner]}">Built by ${pname(st, bl.owner)}</div>`;
-  else if (cost && (l.era === "BOTH" || l.era === st.era)) h += `<div class="sl">Construction cost: £${cost.money}${cost.coal ? ` + ${cubeHTML("coal", 11)}` : ""}${cost.prov ? ` + ${cubeHTML("prov", 11)}` : ""}</div>`;
-  else h += `<div class="sl">Unavailable in the ${T(st.eraZh)}</div>`;
+  let h = `<b>${cityZh(a)} — ${cityZh(b)}</b> <span class="sl">${l.sea ? "海运" : "陆路"} · ${era}</span>`;
+  if (bl) h += `<div class="row" style="color:${PCOL[bl.owner]}">${pname(st, bl.owner)} 已建成</div>`;
+  else if (cost && (l.era === "BOTH" || l.era === st.era)) h += `<div class="sl">建造费用：$${cost.money}${cost.coal ? ` + ${cubeHTML("coal", 11)}` : ""}${cost.prov ? ` + ${cubeHTML("prov", 11)}` : ""}</div>`;
+  else h += `<div class="sl">${st.eraZh}不可用</div>`;
   showTip(h);
 }
 
@@ -1015,7 +909,7 @@ function onMapClick(hit) {
   }
   if (!acts.length) {
     UI.filter = null; renderActions();
-    toast(hit.city ? `${cityZh(hit.city)}: no actions available. See the tooltip for details.` : `This link cannot be built in the ${T(S.eraZh)}`);
+    toast(hit.city ? `${cityZh(hit.city)}：当前无可执行动作，原因见提示框` : `该连线${S.eraZh}不可建`);
     return;
   }
   UI.tab = acts[0].kind;
@@ -1062,7 +956,7 @@ function flyCube(kind, from, to, delay = 0, dur = 520) {
 }
 function floatText(pos, text, color = "#f0d49a") {
   const e = document.createElement("div");
-  e.className = "fxtext"; e.textContent = T(text); e.style.color = color;
+  e.className = "fxtext"; e.textContent = text; e.style.color = color;
   e.style.left = pos.x + "px"; e.style.top = pos.y + "px";
   e.style.animationDuration = DUR(1500) + "ms";
   $("#fx").appendChild(e); setTimeout(() => e.remove(), DUR(1600));
@@ -1073,7 +967,7 @@ function ringAt(pos, color) {
   $("#fx").appendChild(e); setTimeout(() => e.remove(), 950);
 }
 function banner(text) {
-  const b = $("#banner"); b.textContent = T(text); b.classList.remove("hide");
+  const b = $("#banner"); b.textContent = text; b.classList.remove("hide");
   b.style.animation = "none"; b.getBoundingClientRect(); b.style.animation = "";
   clearTimeout(banner._t); banner._t = setTimeout(() => b.classList.add("hide"), 1500);
 }
@@ -1101,10 +995,10 @@ async function playEvents(events, final) {
 }
 function setPlaybar(pid, waiting = false) {
   const p = D.players.find(x => x.id === pid);
-  const step = UI.stepTotal > 1 ? `<span class="pstep" title="AI action replay progress">${UI.stepN}/${UI.stepTotal}</span>` : "";
+  const step = UI.stepTotal > 1 ? `<span class="pstep" title="本轮 AI 行动的第几步">${UI.stepN}/${UI.stepTotal}</span>` : "";
   $("#playwho").innerHTML = !p ? "" : waiting
-    ? `${avatarHTML(p.avatar, PCOL[p.id], 24)}<span style="color:${PCOL[p.id]}">${T(p.name)}</span>${step}<span class="ptap">Click anywhere to continue ▸</span>`
-    : `${avatarHTML(p.avatar, PCOL[p.id], 24)}<span style="color:${PCOL[p.id]}">${T(p.name)}</span> ActionMedium…`;
+    ? `${avatarHTML(p.avatar, PCOL[p.id], 24)}<span style="color:${PCOL[p.id]}">${p.name}</span>${step}<span class="ptap">点任意处继续 ▸</span>`
+    : `${avatarHTML(p.avatar, PCOL[p.id], 24)}<span style="color:${PCOL[p.id]}">${p.name}</span> 行动中…`;
   $("#playbar").classList.toggle("waiting", waiting);
 }
 // 逐步播放：AI 的每个动作播完后停住（地图高亮、行动卡片都保留），点屏幕任意处（或空格、回车）继续。
@@ -1143,10 +1037,10 @@ async function playOne(ev, final) {
     return yourTurnFx(final.actionsLeft);
   }
   if (ev.t === "pass") {
-    D.log.push({ who: D.players.find(p => p.id === ev.p).name, text: "Pass", _new: 1 }); renderLog(D);
+    D.log.push({ who: pname(D, ev.p), text: "跳过", _new: 1 }); renderLog(D);
     if (ev.p === me(D).id) return sleep(DUR(500));
     UI.stepN += 1;
-    const card = actFeed(ev.p, "Pass", "", SET.step);
+    const card = actFeed(ev.p, "跳过", "", SET.step);
     await sleep(DUR(300));
     await waitTap(ev.p);
     fadeFeed(card);
@@ -1161,9 +1055,9 @@ async function playOne(ev, final) {
     D.turnOrder = ev.order; D.round = (ev.round || D.round) + 1;
     renderPlayers(D); renderTop(D);
     Object.entries(ev.income || {}).forEach(([pid, v]) => {
-      if (v) floatText(screenOfPlayer(+pid, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), v > 0 ? "#b9e3a7" : "#f09a8a");
+      if (v) floatText(screenOfPlayer(+pid, ".money"), (v > 0 ? "+$" : "−$") + Math.abs(v), v > 0 ? "#b9e3a7" : "#f09a8a");
     });
-    D.log.push({ who: "system", text: `Round ${ev.round} ends: income paid; lower spending acts earlier next round`, _new: 1 }); renderLog(D);
+    D.log.push({ who: "system", text: `第 ${ev.round} 轮结束：发放收入；本轮花费少者下轮先行`, _new: 1 }); renderLog(D);
     D._strip = ev.order;              // 等下一位玩家开始时再显示顺位条（时代交替的画面要先播完）
     return sleep(DUR(700));
   }
@@ -1178,7 +1072,7 @@ async function playOne(ev, final) {
   if (!isMe && SET.follow && focus.length) await map.ensureVisible(focus);
   map.preview(ev, col);
   if (!isMe) UI.stepN += 1;
-  const card = isMe ? null : actFeed(pid, describeAction(ev, B), ev.why, SET.step);
+  const card = isMe ? null : actFeed(pid, ev.text, ev.why, SET.step);
   await sleep(DUR(isMe ? 120 : 650));
 
   const tgt = ev.city ? screenOfCity(ev.city, ev.kind === "BUILD" || ev.kind === "SELL" ? ev.slot : null)
@@ -1221,21 +1115,21 @@ async function playOne(ev, final) {
   (ev.pairs || []).forEach(pr => D.linkedPairs.push(pr));
   (ev.claimed || []).forEach(c => { const h = D.hubs.find(x => x.id === c.hub); if (h) h.claimedBy = c.by; });
   const bump = applyDeltas(ev);
-  D.log.push({ who: D.players.find(p => p.id === pid).name, text: describeAction(ev, B), why: ev.why, _new: 1,
+  D.log.push({ who: isMe ? "你" : pname(D, pid), text: ev.text, why: ev.why, _new: 1,
     at: [ev.city, ...(ev.link || []), ...(ev.second || [])].filter(Boolean) });
 
   map.clearPreview();
   map.setState(D, me(D).id);
-  renderPlayers(D, bump); renderLog(D); renderMat(D);
+  renderPlayers(D, bump); renderLog(D);
   if (ev.kind === "BUILD" || ev.kind === "SELL") { map.popSlot(ev.city, ev.slot); ringAt(screenOfCity(ev.city, ev.slot), col); }
   (ev.sells || []).slice(1).forEach(s => { map.popSlot(s.city, s.slot); ringAt(screenOfCity(s.city, s.slot), col); });
   if (ev.kind === "NETWORK") [ev.link, ev.second].filter(Boolean).forEach(l => map.flashLink([...l].sort().join("|"), col));
   // 数字飘字：钱、收入、分
   const dm = (ev.dmoney || {})[pid];
-  if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+£" : "−£") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
+  if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+$" : "−$") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
   const di = (ev.dincome || {})[pid];
-  if (di) setTimeout(() => floatText(screenOfPlayer(pid, ".r2"), `Income ${di > 0 ? "+" : ""}${di}`, di > 0 ? "#b9e3a7" : "#f09a8a"), DUR(260));
-  if (ev.kind === "SELL") floatText(tgt, "Sold！", "#ffe39a");
+  if (di) setTimeout(() => floatText(screenOfPlayer(pid, ".r2"), `收入 ${di > 0 ? "+" : ""}${di}`, di > 0 ? "#b9e3a7" : "#f09a8a"), DUR(260));
+  if (ev.kind === "SELL") floatText(tgt, "卖出！", "#ffe39a");
   // 煤铁建成立刻卖给市场：方块从板件飞回市场
   if (ev.kind === "BUILD" && ["COAL", "IRON"].includes(ev.industry)) {
     const after = (ev.after || []).find(t => t.city === ev.city && t.slot === ev.slot);
@@ -1243,7 +1137,7 @@ async function playOne(ev, final) {
     for (let j = 0; j < sold; j++) flyCube(ev.industry === "COAL" ? "coal" : "iron", tgt, screenOfMarket(zone), 200 + j * 90, 480);
   }
   Object.entries(ev.dmoney || {}).forEach(([op, v]) => {       // 被取用资源的对手也有反应
-    if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), "#b9e3a7");
+    if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+$" : "−$") + Math.abs(v), "#b9e3a7");
   });
   (ev.notes || []).forEach(n => { if (!n.startsWith("取用")) toast(n); });
   if (!isMe && SET.step && !UI.skip && !document.hidden) {
@@ -1262,12 +1156,12 @@ function eraSplash(ev) {
     const rows = D.players.map(p => {
       const g = ev.gain[p.id] || {};
       const tot = Object.values(g).reduce((a, b) => a + b, 0);
-      const parts = [["tiles", "Tiles"], ["links", "Links"], ["contested", "Shared cities"]].filter(([k]) => g[k]).map(([k, z]) => `${z} ${g[k]}`).join(" · ");
-      return `<div class="g">${avatarHTML(p.avatar, PCOL[p.id], 42)}<div class="n" style="color:${PCOL[p.id]}">${T(p.name)}</div>
-        <div class="v">+${tot}</div><div class="d">${parts || "—"}</div><div class="d">Total ${ev.vp[p.id]} VP</div></div>`;
+      const parts = [["tiles", "板件"], ["links", "连线"], ["contested", "争夺"]].filter(([k]) => g[k]).map(([k, z]) => `${z} ${g[k]}`).join(" · ");
+      return `<div class="g">${avatarHTML(p.avatar, PCOL[p.id], 42)}<div class="n" style="color:${PCOL[p.id]}">${p.name}</div>
+        <div class="v">+${tot}</div><div class="d">${parts || "—"}</div><div class="d">合计 ${ev.vp[p.id]} 分</div></div>`;
     }).join("");
-    d.innerHTML = `<h2>${T(ev.eraZh)} ends</h2><p>Flipped tiles score; links score the link values of flipped tiles at both ends</p><div class="gains">${rows}</div>
-      <p>${ev.final ? "The final ledger" : "Entering the Steam Era: level I tiles and all links will be removed"}</p><button class="primary">Continue</button>`;
+    d.innerHTML = `<h2>${ev.eraZh}结束</h2><p>已翻面板件计分；连线按两端板件的连线分计分</p><div class="gains">${rows}</div>
+      <p>${ev.final ? "对局结束" : "即将进入蒸汽时代：Ⅰ级板件与全部连线将被清除"}</p><button class="primary">继续</button>`;
     document.body.appendChild(d);
     D.players.forEach(p => { p.vp = ev.vp[p.id]; });
     renderPlayers(D);
@@ -1300,12 +1194,12 @@ function clickOrWait(el, ms) {           // 点一下或等够时间就继续；
 async function orderDraw(st) {
   const order = st.turnOrder, meId = me(st).id, pos = order.indexOf(meId) + 1;
   const d = document.createElement("div"); d.id = "orderDraw";
-  d.innerHTML = `<h2>Drawing turn order</h2><div class="sub">The turn order for Round 1 is determined randomly.</div>
+  d.innerHTML = `<h2>抽取顺位</h2><div class="sub">The turn order for Round 1 is determined randomly.</div>
     <div class="odcards">${order.map((pid, i) => {
       const p = pInfo(st, pid);
       return `<div class="odc ${pid === meId ? "me" : ""}" style="--c:${PCOL[pid]};--i:${i}"><div class="in">
         <div class="back"></div>
-        <div class="front"><span class="no">${i + 1}</span>${avatarHTML(p.avatar, PCOL[pid], 54)}<b style="color:${PCOL[pid]}">${p.isMe ? "You" : T(p.name)}</b></div>
+        <div class="front"><span class="no">${i + 1}</span>${avatarHTML(p.avatar, PCOL[pid], 54)}<b style="color:${PCOL[pid]}">${p.isMe ? "你" : p.name}</b></div>
       </div></div>`;
     }).join("")}</div>
     <div class="cap"></div><div class="hintc">Click to continue</div>`;
@@ -1313,8 +1207,8 @@ async function orderDraw(st) {
   await sleep(UI.skip ? 0 : DUR(900));                      // 洗牌
   const cards = [...d.querySelectorAll(".odc")];
   for (const c of cards) { c.classList.add("flip"); await sleep(UI.skip ? 0 : DUR(380)); }
-  d.querySelector(".cap").innerHTML = pos === 1 ? `You act <b>first</b>` :
-    `You act in position <b>${pos}</b>. Watch ${pos - 1} rivals take their turns before you.`;
+  d.querySelector(".cap").innerHTML = pos === 1 ? `你<b>第 1 个</b>行动` :
+    `你<b>第 ${pos} 个</b>行动：前面 ${pos - 1} 位对手先行动，你会看到他们的每一步`;
   d.classList.add("done");
   await clickOrWait(d, DUR(2600));
   d.classList.add("out"); await sleep(UI.skip ? 0 : 280); d.remove();
@@ -1322,7 +1216,7 @@ async function orderDraw(st) {
 // 开场：时代与轮次
 async function startSplash(st) {
   const d = document.createElement("div"); d.id = "startSplash";
-  d.innerHTML = `<div class="t1">${T(st.eraZh)}</div><div class="t2">The world opens</div>
+  d.innerHTML = `<div class="t1">${st.eraZh}</div><div class="t2">游戏开始</div>
     <div class="t3">Round 1: 1 action per player · Subsequent rounds: 2 actions per player</div>`;
   document.body.appendChild(d);
   await clickOrWait(d, DUR(1900));
@@ -1333,10 +1227,10 @@ function orderStrip(st, order, round) {
   const old = $("#orderStrip"); if (old) old.remove();
   const meId = me(st).id;
   const d = document.createElement("div"); d.id = "orderStrip";
-  d.innerHTML = `<span class="rd">${T(st.eraZh)}, Round ${round}</span>` + order.map((pid, i) => {
+  d.innerHTML = `<span class="rd">${st.eraZh} 第 ${round} 轮</span>` + order.map((pid, i) => {
     const p = pInfo(st, pid);
-    return `<span class="os ${pid === meId ? "me" : ""}" style="--c:${PCOL[pid]}"><i>${i + 1}</i>${avatarHTML(p.avatar, PCOL[pid], 26)}<b>${p.isMe ? "You" : T(p.name)}</b></span>`;
-  }).join(`<span class="ar">›</span>`) + `<span class="why">Lowest spending last round goes first</span>`;
+    return `<span class="os ${pid === meId ? "me" : ""}" style="--c:${PCOL[pid]}"><i>${i + 1}</i>${avatarHTML(p.avatar, PCOL[pid], 26)}<b>${p.isMe ? "你" : p.name}</b></span>`;
+  }).join(`<span class="ar">›</span>`) + `<span class="why">上轮花费少者先行动</span>`;
   $("#mapwrap").appendChild(d);
   setTimeout(() => d.classList.add("out"), DUR(2600));
   setTimeout(() => d.remove(), DUR(2600) + 400);
@@ -1345,8 +1239,8 @@ function orderStrip(st, order, round) {
 function actFeed(pid, text, why, sticky = false) {
   const box = $("#actfeed"), st = V(), p = st && pInfo(st, pid); if (!box || !p) return null;
   const e = document.createElement("div"); e.className = "afc"; e.style.setProperty("--c", PCOL[pid]);
-  e.innerHTML = `<div class="h">${avatarHTML(p.avatar, PCOL[pid], 22)}<b style="color:${PCOL[pid]}">${p.isMe ? "You" : T(p.name)}</b></div>
-    <div class="t">${T(text)}</div>${why ? `<div class="w">${T(why)}</div>` : ""}`;
+  e.innerHTML = `<div class="h">${avatarHTML(p.avatar, PCOL[pid], 22)}<b style="color:${PCOL[pid]}">${p.isMe ? "你" : p.name}</b></div>
+    <div class="t">${text}</div>${why ? `<div class="w">${why}</div>` : ""}`;
   box.appendChild(e);
   while (box.children.length > 3) box.firstElementChild.remove();
   if (!sticky) fadeFeed(e, DUR(4200));
@@ -1362,7 +1256,7 @@ async function yourTurnFx(n) {
   const st = V(); if (!st) return;
   const p = me(st), col = PCOL[p.id];
   const d = document.createElement("div"); d.id = "yourTurn"; d.style.setProperty("--c", col);
-  d.innerHTML = `<div class="pill">${avatarHTML(p.avatar, col, 40)}<div><b>Your turn</b><span>${n || st.actionsLeft || 2} ${(n || st.actionsLeft || 2) === 1 ? "action" : "actions"} this turn</span></div></div>`;
+  d.innerHTML = `<div class="pill">${avatarHTML(p.avatar, col, 40)}<div><b>轮到你了</b><span>本回合 ${n || st.actionsLeft || 2} 个动作</span></div></div>`;
   document.body.appendChild(d);
   ["#handPane", "#actPane"].forEach(s => { const el = $(s); if (el) { el.classList.remove("attn"); void el.offsetWidth; el.classList.add("attn"); } });
   setTimeout(() => d.classList.add("out"), 1500);
@@ -1382,63 +1276,10 @@ async function playOpening(st) {
   S = st; D = null; renderAll();
 }
 
-// ================= 背景音乐 =================
-// tools/make_bgm.py 合成：文件 = 曲尾 1 秒 + 完整一遍 108 秒 + 曲头 1 秒，只在中间那段循环，
-// MP3 首尾的编码空白就落在循环区外，接缝无缝。浏览器要等玩家第一次点击或按键后才允许出声。
-const BGM_PAD = 1.0, BGM_LOOP = 108.0;
-const BGM = { ctx: null, gain: null, src: null, buf: null, loading: null };
-async function bgmStart() {
-  if (!SET.music) return;
-  try {
-    if (!BGM.ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-      BGM.ctx = new AC(); BGM.gain = BGM.ctx.createGain(); BGM.gain.gain.value = 0; BGM.gain.connect(BGM.ctx.destination);
-    }
-    if (BGM.ctx.state === "suspended") await BGM.ctx.resume();
-    if (!BGM.buf) {
-      BGM.loading = BGM.loading || fetch("/assets/bgm.mp3").then(r => r.arrayBuffer())
-        .then(a => new Promise((ok, bad) => BGM.ctx.decodeAudioData(a, ok, bad)));
-      BGM.buf = await BGM.loading;
-    }
-    if (!SET.music) return;                                   // 下载期间被关掉了
-    if (!BGM.src) {
-      const s = BGM.ctx.createBufferSource();
-      s.buffer = BGM.buf;
-s.loop = true;
-s.loopStart = 0;
-s.loopEnd = BGM.buf.duration;
-s.connect(BGM.gain);
-s.start(0);
-BGM.src = s;
-    }
-    bgmRamp(+SET.vol || 0.35, 2.5);
-  } catch (e) { }
-}
-function bgmRamp(to, sec) {
-  if (!BGM.ctx) return;
-  const g = BGM.gain.gain, now = BGM.ctx.currentTime;
-  g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(to, now + sec);
-}
-function bgmToggle(on = !SET.music) {
-  SET.music = on; savePrefs();
-  if (on) bgmStart(); else bgmRamp(0, 0.6);
-  const b = $("#btnMusic"); b.classList.toggle("on", on); b.title = on ? "Background music: on (M)" : "Background music: off (M)";
-}
-function bgmBind() {
-  const b = $("#btnMusic"); b.classList.toggle("on", !!SET.music);
-  b.onclick = e => { e.stopPropagation(); bgmToggle(); };
-  const first = () => { removeEventListener("pointerdown", first, true); removeEventListener("keydown", first, true); bgmStart(); };
-  addEventListener("pointerdown", first, true); addEventListener("keydown", first, true);
-  document.addEventListener("visibilitychange", () => {         // 切到别的标签页时暂停
-    if (!BGM.ctx) return;
-    if (document.hidden) BGM.ctx.suspend(); else if (SET.music) BGM.ctx.resume();
-  });
-}
-
 // ================= 弹层 =================
 function modal(html, cls = "") {
   const d = document.createElement("div"); d.className = "overlay";
-  d.innerHTML = `<div class="modal ${cls}">${html}${S && S.eco && (html.includes("<h2>How to play</h2>") || html.includes("<h2>Rules</h2>")) ? ECO_RULES_HTML : ""}</div>`;
+  d.innerHTML = `<div class="modal ${cls}">${html}</div>`;
   document.body.appendChild(d);
   d.addEventListener("click", e => { if (e.target === d && !d.dataset.sticky) d.remove(); });
   return d;
@@ -1462,77 +1303,92 @@ function bindSeg(root, onChange) {
 }
 function showNewGame() {
   const ls = localSave();
-  const o = Object.assign({ mode: "eco" }, SET);
-  const resume = ls ? `<div class="resume"><div class="t">Previous game: <b>${T(ls.meta.era || "")}, Round ${ls.meta.round || "?"}</b><br>
-      ${(ls.meta.players || []).map(p => `${T(p.name)} ${p.vp} VP`).join(" · ")}<br><span style="color:var(--dim);font-size:11.5px">${new Date(ls.meta.t || Date.now()).toLocaleString("en-US")}</span></div>
-      <button class="primary" id="ngResume">Resume game</button></div>` : "";
-  const d = modal(`<h2>Brassworld — An Industrial Atlas</h2>
-    <div class="sub">A world-spanning Brass variant · 80 cities · 21 regions · You and three AI rivals</div>
+  const o = Object.assign({}, SET);
+  const resume = ls ? `<div class="resume"><div class="t">上一局：<b>${ls.meta.era || ""} 第 ${ls.meta.round || "?"} 轮</b><br>
+      ${(ls.meta.players || []).map(p => `${p.name} ${p.vp}分`).join(" · ")}<br><span style="color:var(--dim);font-size:11.5px">${new Date(ls.meta.t || Date.now()).toLocaleString("zh-CN")}</span></div>
+      <button class="primary" id="ngResume">继续上局</button></div>` : "";
+  const d = modal(`<h2>工业革命 · 世界</h2>
+    <div class="sub">Brass: Birmingham 同人世界地图 · 80 城 · 21 区域 · 4 人局（你与 3 个 AI）</div>
     ${resume}
-    <div class="field"><label>Game mode</label>${seg("mode", [["normal", "Classic (original server)"], ["eco", "Eco (local world engine)"]], o.mode)}</div>
-    <div class="eco-start-note">Eco uses this full world map with a newly implemented rules engine and heuristic AI. Classic keeps the original online engine. Eco saves start separately.</div>
-    <div class="field"><label>AI difficulty</label>${seg("level", [["easy", "Novice"], ["normal", "Experienced"], ["hard", "Expert"]], o.level)}
+    <div class="field"><label>AI 难度</label>${seg("level", [["easy", "新手"], ["normal", "老练"], ["hard", "大师"]], o.level)}
       <div class="seg"><span class="hint" id="lvHint"></span></div></div>
-    <div class="field"><label>Suggested moves</label>${seg("hints", [["0", "Off"], ["1", "On"]], o.hints ? "1" : "0")}</div>
-    <div class="field" style="align-items:flex-start"><label>Your portrait</label><div class="avgrid">${AVATARS.map(k =>
+    <div class="field"><label>推荐走法</label>${seg("hints", [["0", "关"], ["1", "开"]], o.hints ? "1" : "0")}</div>
+    <div class="field" style="align-items:flex-start"><label>你的头像</label><div class="avgrid">${AVATARS.map(k =>
       `<div class="avopt ${k === o.avatar ? "on" : ""}" data-av="${k}">${avatarHTML(k, "#c9a15a", 44)}<span>${AVATAR_ZH[k]}</span></div>`).join("")}</div></div>
-    <div class="btns">${S && S.started && !S.over ? `<button id="ngCancel">Return to game</button>` : ""}<button class="primary" id="ngGo">Begin the game</button></div>`);
+    <div class="btns">${S && S.started && !S.over ? `<button id="ngCancel">返回对局</button>` : ""}<button class="primary" id="ngGo">开始新对局</button></div>`);
   if (!(S && S.started)) d.dataset.sticky = "1";
-  const LVH = { easy: "Heuristic evaluation with more varied play", normal: "Value network, with occasional suboptimal choices", hard: "Value network with full-turn lookahead",
-    master: "Value network with sampled search; strongest, but slower." };
-  const sync = () => { d.querySelector("#lvHint").textContent = o.mode === "eco" ? "Eco AI: heuristic decisions; no original neural-network AI." : LVH[o.level]; };
+  const LVH = { easy: "启发式评分，随机性较大", normal: "价值网络，偶有次优选择", hard: "价值网络 + 整回合前瞻",
+    master: "价值网络 + 抽样模拟搜索，最强；每轮需等十余秒" };
+  const sync = () => { d.querySelector("#lvHint").textContent = LVH[o.level]; };
   bindSeg(d, (k, v) => { o[k] = k === "hints" ? v === "1" : v; sync(); });
   d.querySelectorAll(".avopt").forEach(a => a.onclick = () => { o.avatar = a.dataset.av; d.querySelectorAll(".avopt").forEach(x => x.classList.toggle("on", x === a)); });
   sync();
   if (ls) d.querySelector("#ngResume").onclick = async () => { d.remove(); await resumeLocal(); };
   const c = d.querySelector("#ngCancel"); if (c) c.onclick = () => d.remove();
   d.querySelector("#ngGo").onclick = async () => {
-    Object.assign(SET, { level: o.level, hints: o.hints, avatar: o.avatar, mode: o.mode }); savePrefs();
+    Object.assign(SET, { level: o.level, hints: o.hints, avatar: o.avatar }); savePrefs();
     d.remove(); $$("#final").forEach(x => x.remove());
     PREV_CLEAR();
     // 开局顺位随机，AI 可能先走；大师、宗师难度要算几秒 —— 没提示的话像是点了没反应
-    const wait = modal(`<h2>Preparing the world…</h2><div class="sub">Assigning home regions and shuffling the deck. Opening AI turns are being played.</div>`);
+    const wait = modal(`<h2>正在开局…</h2><div class="sub">分配本土、洗牌；先行的 AI 正在行动</div>`);
     wait.dataset.sticky = "1";
     let st;
-    try { st = await api("/api/new", { level: o.level, hints: o.hints, avatar: o.avatar, mode: o.mode }); }
+    try { st = await api("/api/new", { level: o.level, hints: o.hints, avatar: o.avatar }); }
     finally { wait.remove(); }
     await playOpening(st);
     if (!SET.reduceMotion) await map.focusRegion(me().home);
-    toast(`Home: ${T(me().homeZh)}. Hover over cards in your hand to see buildable cities and required resources.`);
+    toast(`Home: ${me().homeZh}. Hover over cards in your hand to see buildable cities and required resources.`);
     try { if (!localStorage.getItem("bw_seen3")) { showHelp(); localStorage.setItem("bw_seen3", "1"); } } catch (e) { }
   };
 }
-const STEPS = () => rules;
+const STEPS = () => [
+  ["目标", "两个时代结束后，胜利点最高者获胜；同分比收入，再比现金。胜利点来自<b>已翻面的板件</b>（每个时代末各计一次）与<b>连线</b>（两端已翻面板件的连线分之和，贸易港所在城市另加 2）。"],
+  ["回合与手牌", "每回合 2 个动作（帆船时代第一轮每人 1 个），每个动作弃 1 张手牌，弃哪张由你选择（确认条中可更换）。建造须弃对应的<b>区域牌</b>、<b>产业牌</b>或万用牌；侦查弃 3 张，换取万用区域牌与万用产业牌各 1 张。也可弃 1 张牌跳过一个动作。回合结束时补足 8 张，牌库用尽后不再补。"],
+  ["网络", "<b>你的网络</b>：有你板件的城市，以及你的连线两端的城市。用产业牌建造须在网络内，用区域牌可建在该区域任一城市（同原作的地点牌），新连线须接着网络。卖货、用煤、用别人的啤酒只要求<b>连通</b>：沿任何玩家的连线能到即可。本土区域开局自带连线。每个动作铺 1 条连线；蒸汽时代可一次铺 2 条（第二条接在第一条远端），两条单价之和 + $5，另耗 1 啤酒。"],
+  ["建造", "城里有只画该产业的空格时须建在那里，没有才用两种产业共用的格。帆船时代每人在每座城市最多 1 块板件。可用同产业更高级的板件<b>覆盖</b>自己的板件；对手的煤矿、铁厂只在场上与市场都没有该资源时可覆盖。被覆盖的板件移出游戏，原主不损失收入。"],
+  ["煤、铁与市场", "酿酒厂帆船时代建成放 1 桶啤酒，蒸汽时代建成放 2 桶。建造消耗煤（黑）与铁（橙）。煤取与该处连通、相隔连线最少的煤矿（谁的都行），不足时向市场购买（该处须与开张的贸易港连通）；铁可取场上任意铁厂。铁厂建成后，产出售予所在区的市场；煤矿须在建成时已与开张的贸易港连通才售予市场。两者都只在<b>建成那一刻</b>卖一次，之后再连通也不会补卖。蒸汽时代起，有连线连通的两个区市场合并。"],
+  ["资金", "每轮结束按收入领钱（全局最后一轮除外）。贷款：得 $30，收入退 3 级，不得低于 −10。收入为负且付不起时，须拆除自己的板件，每块得造价一半；仍不够，每差 $1 扣 1 分。"],
+  ["板件等级", `各产业板件按等级依次使用。开发：移除 1–2 块板件（各为所属产业当前最低一级，可同一产业），每块支付 1 铁。Ⅰ级板件在帆船时代结束时清出地图；标注“仅帆船时代”的板件须先开发，蒸汽时代才能继续该产业。${anyNoDev() ? "标注“不可开发”的板件只能建造。" : ""}`],
+  ["销售", "棉纺厂、制造厂、陶瓷厂须连通收购该货的<b>贸易港</b>方可销售。贸易港须有连线接入（港口城市至少连着一条已建成的连线，谁建的都行）才开张，未开张时地图上显示为暗色。销售按板件所示消耗啤酒，用哪桶由你选：所卖贸易港自带的啤酒（每个时代 1 桶）、你自己任一酿酒厂的、或与该板件连通的对手酿酒厂的。一次销售可任选几件，售出后板件翻面。用掉贸易港自带的啤酒时获得该港奖励（港内啤酒每个时代补满）。"],
+  ["操作", "悬停（手机：点按）手牌可查看可建城市、造价与所需资源。点击城市或连线可筛选该处动作。选中动作后，地图显示目标与资源来源，确认后执行。AI 行动逐条回放，可跳过。"],
+];
 // ---------- 玩法：先问会不会玩伯明翰，再讲规则或差异，最后逐一指认界面 ----------
-const KEYS_LINE = `<div class="sub" style="margin:12px 0 0">Keyboard: Enter — confirm · Esc — cancel · AI turns: Space / Enter — next, Esc — skip replay · F — world · H — home · I — my industries · M — music</div>`;
-const ECO_RULES_HTML = `<section class="eco-help"><h3>Eco Mode · Environmental rules</h3><ul><li>On Sell: cotton +1, manufacturing +2, pottery +3 city pollution (cap 10).</li><li>At pollution 6–10, every player's new Build costs an extra £5.</li><li>Clean Up: £5 + one action + one discard; reduce pollution by 3 in a city with your factory.</li><li>Eco Upgrade: £8 + one action + one discard; upgrade your unsold sales factory once. Its sale emits 2 less pollution, minimum zero.</li><li>Sell an upgraded factory: gain 2 green points, once. Each converts to 1 VP only at final scoring.</li><li>Pollution persists across eras. Coal, iron and breweries do not emit in this version.</li></ul><p>Eco runs a newly implemented world engine and heuristic AI. Classic retains the original online engine. See ECO_README_CN.md for compatibility limits.</p></section>`;
+const KEYS_LINE = `<div class="sub" style="margin:12px 0 0">快捷键：回车 确认 · Esc 取消 · AI 回合中空格 / 回车 下一步、Esc 跳过回放 · F 全局 · H 本土 · I 我的产业</div>`;
 function showHelp() {
-  const d = modal(`<button class="x">✕</button><h2>How to play</h2>
-    <div class="sub">Have you played Brass: Birmingham before?</div>
+  const d = modal(`<button class="x">✕</button><h2>玩法</h2>
+    <div class="sub">你玩过《工业革命：伯明翰》吗？</div>
     <div class="choose">
-      <button type="button" id="hpKnow"><b>I know the game</b><span>Discover the world-map variant, then take a tour.</span></button>
-      <button type="button" id="hpNew"><b>I’m new to Brass</b><span>Learn the rules, then explore the interface.</span></button>
+      <button type="button" id="hpKnow"><b>会玩</b><span>只看与伯明翰不同的地方，再认识界面</span></button>
+      <button type="button" id="hpNew"><b>不会玩</b><span>从规则讲起，再逐一认识界面</span></button>
     </div>${KEYS_LINE}`);
   d.querySelector(".x").onclick = () => d.remove();
   d.querySelector("#hpKnow").onclick = () => { d.remove(); showDiffs(); };
   d.querySelector("#hpNew").onclick = () => { d.remove(); showRules(); };
 }
-const DIFFS = differences;
+const DIFFS = [
+  ["地图与牌", "世界地图共 80 城、21 个区域。地点牌改为<b>区域牌</b>：可在该区域任一城市建造，同样不必在网络内。固定 4 人局，每个时代约 13 轮。"],
+  ["本土", "每人有一个本土区域，开局自带本土内的连线。"],
+  ["贸易港", "对应商人，共 17 个，设在城市里，这座城市也可以建产业。原作卖货至少要经一条通往商人的连线，这里对应为：<b>港口城市至少连着一条已建成的连线（谁建的都行）才开张</b>，未开张的港不收货，也不能经它买市场煤。每个港收购的货物固定；港口奖励（免费开发、收入 +2、3 分、$5）每局随机分配。港内啤酒即商人啤酒，每个时代补满。"],
+  ["市场", "煤铁市场分四个区：不列颠、欧陆、美洲、亚太，各一套原作规格的市场，开局储量不同。在哪个区建造，就向哪个区的市场购买、卖给哪个区的市场。<b>蒸汽时代</b>起，两个区之间有连线连通（谁修的都行），两区市场合并成一个：方块与空位合在一起，价格趋同，建在任一区的煤矿、铁厂都能填补合并后市场的空位。帆船时代各区市场始终独立。"],
+  ["海运线", "除陆路外还有海运线：帆船时代 $8；蒸汽时代 $12，另耗 1 煤、1 啤酒。蒸汽时代双铺时，第二条须接在第一条的远端。"],
+  ["额外收益", "两名玩家的网络首次连通时，双方各得 $8、收入 +1。时代结束时，同一城市有两家以上的板件，每家 +2 分。"],
+  ["简化", "收入为负、须拆板件还钱时，由系统自动选择损失最小的板件。"],
+];
 function stepsHTML(list) {
   return list.map((s, i) => `<div class="step"><div class="n">${i + 1}</div><div class="t"><b>${s[0]}</b><div class="d">${s[1]}</div></div></div>`).join("");
 }
 function showDiffs() {
-  const d = modal(`<button class="x">✕</button><h2>The world-map variant</h2>
-    <div class="sub">All other rules follow Brass: Birmingham.</div>${stepsHTML(DIFFS)}
-    <div class="btns"><button id="hpAll">Read all rules</button><button class="primary" id="hpTour">Explore the interface →</button></div>`);
+  const d = modal(`<button class="x">✕</button><h2>与伯明翰的不同</h2>
+    <div class="sub">其余规则与《工业革命：伯明翰》相同</div>${stepsHTML(DIFFS)}
+    <div class="btns"><button id="hpAll">查看完整规则</button><button class="primary" id="hpTour">认识界面 →</button></div>`);
   d.querySelector(".x").onclick = () => d.remove();
   d.querySelector("#hpAll").onclick = () => { d.remove(); showRules(false); };
   d.querySelector("#hpTour").onclick = () => { d.remove(); startTour(false); };
 }
 function showRules(novice = true) {
-  const d = modal(`<button class="x">✕</button><h2>Rules</h2>
-    <div class="sub">Brass: Birmingham rules · World map · Progress autosaved in this browser</div>${stepsHTML(STEPS())}${KEYS_LINE}
-    <div class="btns"><button id="hpClose">Close</button><button class="primary" id="hpTour">Explore the interface →</button></div>`);
+  const d = modal(`<button class="x">✕</button><h2>规则</h2>
+    <div class="sub">Brass: Birmingham 规则 · 世界地图 · 进度自动保存于本机浏览器</div>${stepsHTML(STEPS())}${KEYS_LINE}
+    <div class="btns"><button id="hpClose">关闭</button><button class="primary" id="hpTour">认识界面 →</button></div>`);
   d.querySelectorAll(".x,#hpClose").forEach(b => b.onclick = () => d.remove());
   d.querySelector("#hpTour").onclick = () => { d.remove(); startTour(novice); };
 }
@@ -1541,13 +1397,23 @@ function showRules(novice = true) {
 function tourStops(novice) {
   const n = (a, b) => novice ? a + b : a;
   return [
-    { sel: "#mapwrap", title: tour["地图"][0], text: tour["地图"][1] },
-    { sel: "#handPane", pane: "hand", title: tour["手牌"][0], text: tour["手牌"][1] },
-    { sel: "#actPane", pane: "act", title: tour["可选行动"][0], text: tour["可选行动"][1] },
-    { sel: "#matPane", pane: "mat", title: tour["板件"][0], text: tour["板件"][1] },
-    { sel: "#markets", msel: "#mktPane", pane: "mkt", title: tour["四个煤铁市场"][0], text: tour["四个煤铁市场"][1] },
-    { sel: "#players", title: tour["玩家信息"][0], text: tour["玩家信息"][1] },
-    { sel: "#btnLog", msel: '#sheetTabs button[data-pane="log"]', title: tour["行动记录"][0], text: tour["行动记录"][1] },
+    { sel: "#mapwrap", title: "地图",
+      text: n("80 座城市、21 个区域。城市下方的格位标出可建的产业，⚓ 为贸易港（暗色表示还没有连线接入，未开张），虚线为航线。点击城市或连线，可筛选该处的动作。",
+        "你的板件和连线都建在这里；开局你在自己的本土区域，已自带连线。") },
+    { sel: "#handPane", pane: "hand", title: "手牌",
+      text: n("区域牌可在该区域任一城市建造；产业牌可在网络内任一城市建造该产业。悬停一张牌，地图亮出能建的城市与造价。",
+        "手牌 8 张，每个动作都要弃 1 张；回合结束时补足。") },
+    { sel: "#actPane", pane: "act", title: "可选行动",
+      text: n("本回合能执行的动作，按类别分页；也可跳过。选中一项，地图显示目标与资源来源，确认条显示花费与要弃的牌。",
+        "六种动作：建造、连接、销售、开发、贷款、侦查。这里只列出现在能做的。") },
+    { sel: "#markets", msel: "#mktPane", pane: "mkt", title: "四个煤铁市场",
+      text: n("不列颠、欧陆、美洲、亚太各有一个煤（黑）铁（橙）市场。建造缺煤缺铁时，向所在区的市场购买；蒸汽时代起，两个区有连线连通后，市场合并。",
+        "越买越贵；买煤须与开张的贸易港连通。建成煤矿、铁厂时，产出先卖给市场换钱。") },
+    { sel: "#players", title: "玩家信息",
+      text: n("每位玩家的分数、现金、收入与本土，按本轮行动顺序排列。点击玩家卡查看其板件。",
+        "收入在每轮结束时发放；本轮花钱最少的，下一轮最先行动。") },
+    { sel: "#btnLog", msel: '#sheetTabs button[data-pane="log"]', title: "行动记录",
+      text: "所有玩家的行动、弃牌与奖励都记录在这里，点击一条可在地图上定位。" },
   ];
 }
 function startTour(novice) {
@@ -1555,7 +1421,7 @@ function startTour(novice) {
   let k = 0;
   const box = document.createElement("div"); box.className = "coach";
   box.innerHTML = `<div class="hole"></div><div class="bub"><div class="h"><b></b><span class="k"></span></div><div class="d"></div>
-    <div class="b"><button type="button" class="skip">Finish tour</button><span class="spacer"></span><button type="button" class="prev">Back</button><button type="button" class="primary next"></button></div></div>`;
+    <div class="b"><button type="button" class="skip">结束导览</button><span class="spacer"></span><button type="button" class="prev">上一步</button><button type="button" class="primary next"></button></div></div>`;
   document.body.appendChild(box);
   const hole = box.querySelector(".hole"), bub = box.querySelector(".bub");
   const end = () => { box.remove(); removeEventListener("resize", draw); removeEventListener("keydown", key, true); if (isMobile()) setSheet("hand", false); };
@@ -1580,7 +1446,7 @@ function startTour(novice) {
       bub.querySelector(".k").textContent = `${k + 1} / ${stops.length}`;
       bub.querySelector(".d").textContent = st.text;
       bub.querySelector(".prev").disabled = k === 0;
-      bub.querySelector(".next").textContent = k === stops.length - 1 ? "Begin game" : "Next";
+      bub.querySelector(".next").textContent = k === stops.length - 1 ? "开始游戏" : "下一步";
       // 说明框放在目标下方；放不下放上方；都放不下（目标很大）就放在目标内部靠上
       const bw = Math.min(340, innerWidth - 24), bh = bub.offsetHeight || 150;
       let top = y + h + 10;
@@ -1604,18 +1470,16 @@ function startTour(novice) {
   draw();
 }
 function showSettings() {
-  const d = modal(`<button class="x">✕</button><h2>Settings</h2><div class="sub">Saved on this device</div>
-    <div class="field"><label>AI turns</label>${seg("step", [["1", "Step by step"], ["0", "Autoplay"]], SET.step ? "1" : "0")}</div>
-    <div class="field"><label>Animation speed</label>${seg("speed", [["1.6", "Slow"], ["1", "Normal"], ["0.5", "Fast"], ["0.15", "Very fast"]], SET.speed)}</div>
-    <div class="field"><label>Camera</label>${seg("follow", [["1", "Follow AI turns"], ["0", "Fixed"]], SET.follow ? "1" : "0")}</div>
-    <div class="field"><label>Suggested moves</label>${seg("hints", [["0", "Off"], ["1", "On"]], SET.hints ? "1" : "0")}</div>
+  const d = modal(`<button class="x">✕</button><h2>设置</h2><div class="sub">保存在这台设备上</div>
+    <div class="field"><label>AI 行动</label>${seg("step", [["1", "逐步（点击继续）"], ["0", "自动播放"]], SET.step ? "1" : "0")}</div>
+    <div class="field"><label>动画速度</label>${seg("speed", [["1.6", "慢"], ["1", "正常"], ["0.5", "快"], ["0.15", "极快"]], SET.speed)}</div>
+    <div class="field"><label>镜头跟随</label>${seg("follow", [["1", "跟随 AI 行动"], ["0", "不动"]], SET.follow ? "1" : "0")}</div>
+    <div class="field"><label>推荐走法</label>${seg("hints", [["0", "关"], ["1", "开"]], SET.hints ? "1" : "0")}</div>
     <div class="field"><label>Contrast mode</label>${seg("contrastMode", [["off", "Standard"], ["light", "Light high contrast"], ["dark", "Dark high contrast"]], SET.contrastMode)}</div>
     <div class="field"><label>Text size</label>${seg("largeText", [["0", "Default"], ["1", "Larger"]], SET.largeText ? "1" : "0")}</div>
     <div class="field"><label>Animation</label><div class="a11y-setting">${seg("reduceMotion", [["0", "Animations on"], ["1", "Reduce animations"]], SET.reduceMotion ? "1" : "0")}<p class="a11y-help">Skips animated AI move replays and minimizes decorative motion and camera movement.</p></div></div>
-    <div class="field"><label>Background music</label>${seg("music", [["1", "On"], ["0", "Off"]], SET.music ? "1" : "0")}</div>
-    <div class="field"><label>Volume</label>${seg("vol", [["0.2", "Low"], ["0.35", "Medium"], ["0.55", "High"]], SET.vol)}</div>
-    <div class="field"><label>Save game</label><button id="stExport">Export save</button><button id="stImport">Import save</button></div>
-    <div class="btns"><button class="primary">Done</button></div>`);
+    <div class="field"><label>存档</label><button id="stExport">导出存档文件</button><button id="stImport">导入存档文件</button></div>
+    <div class="btns"><button class="primary">完成</button></div>`);
   bindSeg(d, async (k, v) => {
     if (k === "speed") SET.speed = +v;
     if (k === "step") { SET.step = v === "1"; if (!SET.step) continueTap(); }
@@ -1623,8 +1487,6 @@ function showSettings() {
     if (k === "contrastMode") SET.contrastMode = v;
     if (k === "largeText") SET.largeText = v === "1";
     if (k === "reduceMotion") SET.reduceMotion = v === "1";
-    if (k === "music") bgmToggle(v === "1");
-    if (k === "vol") { SET.vol = v; if (SET.music) bgmRamp(+v, 0.4); }
     if (k === "hints") { SET.hints = v === "1"; if (S && S.started) { const st = await api("/api/settings", { hints: SET.hints }); S = st; renderAll(); } }
     applyA11yPrefs();
     if (k === "largeText" && map) map.layout();
@@ -1632,10 +1494,10 @@ function showSettings() {
   });
   d.querySelectorAll(".x,.btns button").forEach(b => b.onclick = () => d.remove());
   d.querySelector("#stExport").onclick = () => {
-    const ls = localSave(); if (!ls) { toast("There is no saved game to export yet."); return; }
+    const ls = localSave(); if (!ls) { toast("还没有可导出的存档"); return; }
     const blob = new Blob([JSON.stringify(ls.save)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = `Brassworld-save-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    a.download = `工业革命世界-存档-${new Date().toISOString().slice(0, 10)}.json`; a.click();
   };
   d.querySelector("#stImport").onclick = () => {
     const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".json,application/json";
@@ -1643,24 +1505,24 @@ function showSettings() {
       try {
         const save = JSON.parse(await inp.files[0].text());
         const st = await api("/api/load", { save });
-        if (!st.started) { toast(st.error || "Unable to load the saved game."); return; }
-        d.remove(); PREV_CLEAR(); await applyState(st, false); map.focusRegion(me().home); toast("Save imported.");
-      } catch (e) { toast("Unable to read this save file."); }
+        if (!st.started) { toast(st.error || "存档无法读取"); return; }
+        d.remove(); PREV_CLEAR(); await applyState(st, false); map.focusRegion(me().home); toast("存档已导入");
+      } catch (e) { toast("存档文件无法读取"); }
     };
     inp.click();
   };
 }
 function showFinal() {
   const st = S, rank = [...st.players].sort((a, b) => b.vp - a.vp || b.income - a.income || b.money - a.money);   // 同分比收入，再比现金
-  const cols = [...(st.eco ? [["green", "Green"]] : []), ["tiles", "Tiles"], ["links", "Links"], ["contested", "Shared cities"], ["hub", "Trade port"], ["debt", "Debt"]];
+  const cols = [["tiles", "板件"], ["links", "连线"], ["contested", "争夺"], ["hub", "贸易港"], ["debt", "欠债"]];
   const bk = st.vpBreak || {};
   const mine = rank.findIndex(p => p.isMe) + 1;
-  const d = modal(`<h2>The final ledger</h2><div class="sub">${mine === 1 ? "You win. " : `You placed ${mine}. `}Victory points by source</div>
-    <table class="score"><thead><tr><th></th><th>Player</th>${cols.map(c => `<th>${c[1]}</th>`).join("")}<th>Total</th></tr></thead><tbody>
+  const d = modal(`<h2>对局结束</h2><div class="sub">${mine === 1 ? "获胜。" : `第 ${mine} 名。`}胜利点按来源拆分</div>
+    <table class="score"><thead><tr><th></th><th>玩家</th>${cols.map(c => `<th>${c[1]}</th>`).join("")}<th>合计</th></tr></thead><tbody>
     ${rank.map((p, i) => { const b = bk[p.id] || {}; return `<tr class="${p.isMe ? "me" : ""}"><td>${i + 1}</td>
-      <td><span class="namecell">${avatarHTML(p.avatar, PCOL[p.id], 26)}${T(p.name)}${p.levelZh ? ` <span style="color:var(--dim);font-size:11px">${T(p.levelZh)}</span>` : ""}</span></td>
+      <td><span class="namecell">${avatarHTML(p.avatar, PCOL[p.id], 26)}${p.name}${p.levelZh ? ` <span style="color:var(--dim);font-size:11px">${p.levelZh}</span>` : ""}</span></td>
       ${cols.map(([k]) => `<td class="${(b[k] || 0) < 0 ? "neg" : ""}">${b[k] ? b[k] : "—"}</td>`).join("")}<td class="tot">${p.vp}</td></tr>`; }).join("")}
-    </tbody></table><div class="btns"><button id="fnView">View final map</button><button class="primary" id="fnAgain">Play again</button></div>`);
+    </tbody></table><div class="btns"><button id="fnView">查看终局地图</button><button class="primary" id="fnAgain">再来一局</button></div>`);
   d.id = "final";
   d.querySelector("#fnView").onclick = () => d.remove();
   d.querySelector("#fnAgain").onclick = () => { d.remove(); showNewGame(); };
@@ -1668,7 +1530,7 @@ function showFinal() {
 
 // ================= 其他 =================
 function toast(text) {
-  const t = document.createElement("div"); t.className = "toast"; t.textContent = T(text);
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = text;
   $("#toasts").appendChild(t); setTimeout(() => t.remove(), 3500);
   while ($("#toasts").children.length > 3) $("#toasts").firstChild.remove();
 }
@@ -1693,7 +1555,6 @@ function setSheet(pane, expanded) {
 }
 
 function bindUI() {
-  bgmBind();
   $("#btnNet").setAttribute("aria-pressed", String(!!UI.net));
   $("#btnMine").setAttribute("aria-pressed", String(!!UI.mine));
   $("#btnNew").onclick = () => { $("#menu").classList.remove("open"); showNewGame(); };
@@ -1765,8 +1626,6 @@ function bindUI() {
     if (el.closest && el.closest("button, a, input, select, textarea, [role=button], .pl, .pcard, .modal, .overlay, #logpanel, #sheetTabs, #settings")) return;
     continueTap();
   }, true);
-  $("#btnMat").onclick = () => showMatModal();
-  $("#players").addEventListener("click", e => { const p = e.target.closest(".pl"); if (p && S) showMatModal(+p.dataset.p); });
   $("#sheetTabs").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     const same = UI.sheet === b.dataset.pane;
@@ -1856,7 +1715,6 @@ function bindUI() {
     else if (e.key === " " && UI.playing) { e.preventDefault(); }
     else if (e.key === "f" || e.key === "F") map.fitWorld();
     else if ((e.key === "h" || e.key === "H") && S && S.started) map.focusRegion(me().home);
-    else if (e.key === "m" || e.key === "M") bgmToggle();
     else if ((e.key === "i" || e.key === "I") && S && S.started) setMine(!UI.mine, true);
   });
 }

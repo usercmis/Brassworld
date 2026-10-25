@@ -19,10 +19,10 @@ const TERRAIN = { src: "/assets/terrain.png", W: 1600, H: 900 };
 
 export const IND_ORDER = ["COAL", "IRON", "PROV", "COTTON", "MFG", "LUX"];
 export const PCOL = ["#c0492f", "#3574ad", "#46895a", "#c9a24a", "#8561b3", "#cf7a3e"];
-export const PCOL_ZH = ["Vermilion", "Cobalt", "Forest", "Ochre", "Violet", "Rust"];
+export const PCOL_ZH = ["朱红", "钴蓝", "墨绿", "金黄", "紫罗兰", "橙褐"];
 export const ROMAN = ["", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ"];
-export const BONUS_SHORT = { develop: "Dev", income: "Inc", vp: "VP", money: "£" };
-export const BONUS_FULL = { develop: "Develop one tile for free (your choice)", income: "Income +2 steps", vp: "+3 VP", money: "+£5" };
+export const BONUS_SHORT = { develop: "开", income: "收", vp: "分", money: "£" };
+export const BONUS_FULL = { develop: "免费开发 1 块板件（可自选）", income: "收入 +2 格", vp: "+3 胜利点", money: "+£5" };
 
 // 区域牌画面：按区域 id 取地形图不同片段。用无符号右移，避免哈希转负数后背景跑出框外。
 export function regionArt(id) {
@@ -86,8 +86,8 @@ export function cubeHTML(kind, size = 13) {
 // ---- 头像 ----
 // 有插画就用插画（web/assets/avatars/<键>.jpg，Canva 生成的油画肖像），没有就画一个剪影，边框用玩家色。
 export const AVATARS = ["uk", "eu", "us", "la", "cn", "jp", "in", "sea", "af", "au"];
-export const AVATAR_ZH = { uk: "British industrialist", eu: "European manufacturer", us: "American rail baron", la: "South American planter",
-  cn: "Chinese merchant", jp: "Meiji industrialist", in: "Bombay textile trader", sea: "Straits merchant", af: "Cairo cotton trader", au: "Sydney wool trader" };
+export const AVATAR_ZH = { uk: "英伦实业家", eu: "欧陆工厂主", us: "美国铁路商", la: "南美庄园主",
+  cn: "华商买办", jp: "明治实业家", in: "孟买纺织商", sea: "南洋侨商", af: "开罗棉商", au: "悉尼羊毛商" };
 const AV_OK = {};
 export function avatarHTML(key, color, size = 40) {
   const k = key && key !== "you" ? key : "uk";

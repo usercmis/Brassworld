@@ -1,4 +1,3 @@
-import { translate as T } from "../theme/locale.js";
 // 地图视图：SVG 图层、镜头、城市牌面、连线、高亮。
 // 几何全部来自 tools/build_map.py 生成的 map.json（显示坐标已做密度放大、航线已寻路）。
 import { el, IND_ART, PORT_ART, artSVG, PCOL, ROMAN, BONUS_SHORT } from "./art.js";
@@ -26,23 +25,6 @@ export class MapView {
     const padY = (b[3] - b[1]) * 0.12;
     this.home = { x: b[0], y: b[1] - padY, w: b[2] - b[0], h: b[3] - b[1] + padY * 1.4 };
     this.fitTo(this.home, false);
-  }
-
-  // Reuse the SVG input bindings and application event handlers when switching maps.
-  replaceBoard(B, M, small) {
-    cancelAnimationFrame(this._raf);
-    this.B = B; this.M = M; this.city = {}; this.linkInfo = {}; this.dotLbl = {};
-    B.cities.forEach(c => { this.city[c.id] = Object.assign({}, c, M.cities[c.id]); });
-    B.links.forEach(l => { this.linkInfo[[l.a,l.b].sort().join('|')] = l; });
-    this.build();
-    if (small) {
-      this.fitCities(B.cities.map(c => c.id), 1.35, 24, false);
-      this.home = { ...this.view };
-    } else {
-      const b = M.bounds, padY = (b[3]-b[1]) * 0.12;
-      this.home = { x:b[0], y:b[1]-padY, w:b[2]-b[0], h:b[3]-b[1]+padY*1.4 };
-      this.fitTo(this.home, false);
-    }
   }
 
   on(evt, fn) { (this.handlers[evt] = this.handlers[evt] || []).push(fn); }
@@ -94,14 +76,14 @@ export class MapView {
     this._lod = "lo";
 
     // 标签
-    const ZZ = { BRITAIN: "Britain", EUROPE: "Europe", AMERICAS: "Americas", ASIAPAC: "Asia-Pacific" };
+    const ZZ = { BRITAIN: "不列颠", EUROPE: "欧陆", AMERICAS: "美洲", ASIAPAC: "亚太" };
     Object.entries(this.M.zones).forEach(([z, [x, y]]) => {
       const t = el("text", { x, y, class: "zone-lbl" }); t.textContent = ZZ[z]; this.gZone.appendChild(t);
     });
     this.B.regions.forEach(r => {
       const p = this.M.regions[r.id]; if (!p) return;
       const t = el("text", { x: p[0], y: p[1], class: "reg-lbl" });
-      t.textContent = T(r.zh); t.dataset.region = r.id; this.gReg.appendChild(t);
+      t.textContent = r.zh; t.dataset.region = r.id; this.gReg.appendChild(t);
     });
 
     // 连线：深色描边 + 浅色芯线，海上陆上都看得见（以前海运线在深色海面上几乎隐形，
@@ -136,7 +118,7 @@ export class MapView {
       this.gPlates.appendChild(g); this.plateEls[c.id] = g;
       // 牌面缩成点时的小字名：否则香港、广州这种密集处只剩两个点，认不出是哪座城
       const t = el("text", { x: c.x, y: c.y, class: "dotlbl" + (c.hub ? " hub" : "") });
-      t.textContent = T(c.short); t.dataset.city = c.id; t.dataset.pri = c.hub ? 2 : (c.port ? 1 : 0);
+      t.textContent = c.short; t.dataset.city = c.id; t.dataset.pri = c.hub ? 2 : (c.port ? 1 : 0);
       this.gDotLbl.appendChild(t); (this.dotLbl = this.dotLbl || {})[c.id] = t;
     });
   }
@@ -179,20 +161,20 @@ export class MapView {
     (S.hubs || []).forEach(h => { if (h.active) hubs[h.city] = h; });
     this.hubByCity = hubs;
     const contested = new Set(S.contested || []);
-    Object.values(this.city).forEach(c => this.drawPlate(c, byCity[c.id] || {}, hubs[c.id], contested.has(c.id), S.eco ? S.eco.pollution[c.id] : null));
+    Object.values(this.city).forEach(c => this.drawPlate(c, byCity[c.id] || {}, hubs[c.id], contested.has(c.id)));
     this.layout();
   }
 
-  drawPlate(c, tiles, hub, contested, pollution = null) {
+  drawPlate(c, tiles, hub, contested) {
     const g = this.plateEls[c.id];
     g.innerHTML = "";
     g.classList.toggle("contested", contested);
     const n = c.slots.length, W = n + SLOT_GAP * (n - 1);
     // 名牌
-    const nw = Math.max(1.2, T(c.short).length * 0.25 + 0.4);
+    const nw = c.short.length * 0.52 + 0.4;
     const nb = el("g", { class: "nm" + (c.hub ? " hub" : "") });
     nb.appendChild(el("rect", { x: -nw / 2, y: 0.18, width: nw, height: 0.6, rx: 0.06, "vector-effect": "non-scaling-stroke" }));
-    const tx = el("text", { x: 0, y: 0.62 }); tx.textContent = T(c.short); nb.appendChild(tx);
+    const tx = el("text", { x: 0, y: 0.62 }); tx.textContent = c.short; nb.appendChild(tx);
     g.appendChild(nb);
     // 贸易港收货栏：港口插画 + 收什么货 + 港口奖励
     if (hub) {
@@ -214,16 +196,10 @@ export class MapView {
       bt.textContent = claimed ? "✓" : (BONUS_SHORT[hub.bonus] || "·");
       hg.appendChild(bt);
       if (hub.open === false) {
-        const tt = el("title", {}); tt.textContent = T(hub.zh) + ": Closed; build a link to this city to open the port";
+        const tt = el("title", {}); tt.textContent = hub.zh + "：未开张，须有连线接入这座城市";
         hg.appendChild(tt);
       }
       g.appendChild(hg);
-    }
-    if (pollution !== null) {
-      const eg = el("g", { class: "eco-city-badge" + (pollution >= 6 ? " eco-high" : "") });
-      eg.appendChild(el("rect", { x: -1.65, y: 0.95, width: 3.3, height: .58, rx: .1 }));
-      const text = el("text", { x: 0, y: 1.36 }); text.textContent = `P ${pollution}/10${pollution >= 6 ? " +£5" : ""}`; eg.appendChild(text);
-      const title = el("title", {}); title.textContent = `Pollution ${pollution}/10. ${pollution >= 6 ? "Building here costs £5 extra." : "No pollution surcharge."}`; eg.appendChild(title);g.appendChild(eg);
     }
     // 建造格
     c.slots.forEach((allowed, i) => {
@@ -236,7 +212,6 @@ export class MapView {
         const art = artSVG(IND_ART[t.industry] || IND_ART.MFG, 0.05, 0.05, 0.9, 0.72);
         if (!t.flipped) art.setAttribute("opacity", ".45");
         sg.appendChild(art);
-        if (t.ecoUpgraded) { const eco = el("text", { x: .8, y: .3, class: "eco-tile-mark" }); eco.textContent="♧";sg.appendChild(eco); }
         const band = el("rect", { x: 0.03, y: 0.78, width: 0.94, height: 0.19 });
         band.style.fill = PCOL[t.owner]; sg.appendChild(band);
         const lv = el("text", { x: 0.2, y: 0.32, class: "lvl" }); lv.textContent = ROMAN[t.level] || t.level;
