@@ -1,0 +1,10 @@
+/* Environmental values use the existing Atlas palette and typography. */
+.eco-green{color:var(--good);font:inherit;font-size:11px}
+.eco-start-note{border-left:2px solid var(--good);padding:8px 12px;color:var(--txt2);line-height:1.6;margin:14px 0}
+.eco-city-badge rect{fill:var(--ink1);stroke:var(--good);stroke-width:.035}
+.eco-city-badge text{fill:var(--good);font-size:.32px;text-anchor:middle;font-family:Georgia,serif}
+.eco-city-badge.eco-high rect{stroke:var(--bad)}.eco-city-badge.eco-high text{fill:var(--bad)}
+.eco-tile-mark{fill:var(--good);font-size:.35px;font-weight:bold}
+#players .r2{gap:8px}#players .r3{flex-wrap:wrap}.empty{line-height:1.7}
+
+@media(min-width:761px){#dock{grid-template-columns:auto minmax(0,1fr)}}
