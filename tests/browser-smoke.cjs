@@ -1,0 +1,64 @@
+/* Requires Playwright and a running local server. TEST_URL defaults to localhost:3000. */
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+(async () => {
+ const browser = await chromium.launch({headless:true,channel:process.env.BROWSER_CHANNEL || 'chrome'});
+ const page = await browser.newPage({viewport:{width:1440,height:1000}});
+ const errors=[], untranslated=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',m=>{if(m.text().startsWith('Untranslated game message:'))untranslated.push(m.text())});
+ await page.addInitScript(()=>{localStorage.setItem('bw_prefs',JSON.stringify({step:false,speed:0.15,music:false,level:'easy'}));localStorage.setItem('bw_seen3','1')});
+ await page.goto(process.env.TEST_URL || 'http://127.0.0.1:3000');
+ await page.waitForSelector('#ngGo');
+ await page.waitForTimeout(1000);
+ await page.screenshot({path:'/tmp/brass-menu.png'});
+ await page.locator('#ngGo').click();
+ await page.waitForFunction(()=>window.__bw?.S?.started && !window.__bw.UI.playing,{},{timeout:180000});
+ await page.waitForTimeout(1500);
+ const scan=async label=>{
+  const text=await page.locator('body').innerText();
+  const attributes=await page.locator('[title],[aria-label],[placeholder]').evaluateAll(els=>els.flatMap(el=>['title','aria-label','placeholder'].map(a=>el.getAttribute(a)||'')).join(' '));
+  assert(!/[\u3400-\u9fff]/.test(attributes),label+': Chinese attribute remains');
+  assert(!/[\u3400-\u9fff]/.test(text),label+': Chinese text remains');
+  assert(!text.includes('Game message unavailable'),label+': untranslated message');
+  console.log('PASS',label);
+ };
+ await scan('new game');
+ await page.locator('.pcard').first().hover();await scan('hand tooltip');
+ await page.mouse.move(0,0);
+ await page.locator('#actlist .act').first().click().catch(async()=>{await page.locator('#acttabs [data-kind=PASS]').click()});
+ await page.waitForSelector('.pcard.todisc');await scan('discard selection');
+ await page.screenshot({path:'/tmp/brass-discard.png'});
+ const badge=await page.locator('.pcard.todisc').first().evaluate(el=>{const s=getComputedStyle(el,'::before');return {width:parseFloat(s.width),content:s.content}});
+ assert(badge.content.includes('Discard'));assert(badge.width>=44);
+ const expected = await page.evaluate(()=>({i:window.__bw.UI.sel,discard:[...window.__bw.UI.discard]}));
+ const sent=page.waitForRequest(r=>r.url().endsWith('/api/action'));
+ await page.locator('#btnGo').click();
+ const request=await sent;const payload=request.postDataJSON();
+ assert.equal(payload.i,expected.i);assert.deepEqual(payload.discard,expected.discard);
+ await page.waitForFunction(()=>!window.__bw.UI.busy && !window.__bw.UI.playing,{},{timeout:180000});
+ await scan('confirmed action and AI response');
+ await page.locator('#btnLog').click();await scan('action journal');await page.locator('#logClose').click();
+ await page.locator('#btnMat').click();await scan('industry board');await page.locator('.overlay .x').click();
+ await page.locator('#btnCities').click();await scan('city navigator');await page.locator('#btnCitiesClose').click();
+ await page.locator('#btnSettings').click();await scan('settings');
+ for(const mode of ['light','dark','off']){await page.locator(`.seg[data-name="contrastMode"] [data-v="${mode}"]`).click();await scan('contrast '+mode)}
+ await page.locator('.seg[data-name="largeText"] [data-v="1"]').click();await scan('larger text');
+ await page.locator('.seg[data-name="largeText"] [data-v="0"]').click();await page.locator('.modal .btns button').click();
+ const before=await page.evaluate(()=>{const s=window.__bw.S;return {era:s.era,round:s.round,players:s.players.map(p=>({id:p.id,name:p.name,money:p.money,income:p.income,vp:p.vp})),save:JSON.parse(localStorage.getItem('bw_save'))}});
+ await page.context().clearCookies();await page.reload();
+ await page.waitForFunction(()=>window.__bw?.S?.started,{},{timeout:180000});await scan('saved game restore');
+ const after=await page.evaluate(()=>{const s=window.__bw.S;return {era:s.era,round:s.round,players:s.players.map(p=>({id:p.id,name:p.name,money:p.money,income:p.income,vp:p.vp})),save:JSON.parse(localStorage.getItem('bw_save'))}});
+ // The server refreshes its save timestamp on load; compare all game data.
+ delete before.save.t; delete after.save.t;
+ assert.deepEqual(after,before,'save state changed across reload');
+ await page.locator('#btnNew').click();await scan('saved game summary');await page.locator('#ngCancel').click();
+ await page.locator('#btnHelp').click();await page.locator('#hpNew').click();await scan('rules modal');await page.locator('#hpTour').click();
+ for(let i=0;i<7;i++){await scan('tutorial '+(i+1));await page.locator('.coach .next').click()}
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(400);await scan('mobile game');
+ await page.locator('#btnMenu').click();await page.locator('#btnSettings').click();await scan('mobile settings');await page.waitForTimeout(400);await page.screenshot({path:'/tmp/brass-mobile.png'});
+ console.log('mobile bounds',await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,x:scrollX}))); 
+ assert.deepEqual(errors,[]);assert.deepEqual([...new Set(untranslated)],[]);
+ console.log('PASS no browser errors or untranslated messages');await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

@@ -38,6 +38,7 @@ button:focus-visible,.pcard:focus-visible,.act:focus-visible{outline-color:#8050
 .ring,.pv,.pv-link{stroke:#9d513d;filter:none}.ring.net{stroke:#62734f}.pv.src.iron{stroke:#b57844}.pv.hubt{stroke:#587a79}
 #mapbtns{top:14px;right:16px;gap:0;border:1px solid #bbaa8a;border-radius:3px;background:#fbf8ee;box-shadow:0 3px 12px #4d351012}
 #mapbtns button{background:transparent;border:0;border-right:1px solid #d3c7af;padding:6px 13px;font-size:13px}#mapbtns button:last-child{border:0}#mapbtns button.on{background:#dfcfad;color:#4b3924}
+#mapbtns #btnCities[aria-expanded="true"]{background:#dfcfad;color:#4b3924}
 #hint,#tip,#playbar,#banner,#logpanel{background:rgba(250,246,234,.97);border-color:#b29b73;color:#493721;box-shadow:0 8px 28px #49321b20}
 #hint{font:14px Garamond,serif;max-width:min(760px,86%)}#tip{max-width:390px}#tip b{font-family:Playfair,serif;letter-spacing:0;font-size:15px}#logpanel{width:370px}.lp-head{letter-spacing:.12em}.le.sys{color:#64715a}
 #banner{font:italic 700 27px Playfair,serif;letter-spacing:.02em}
@@ -58,3 +59,160 @@ button:focus-visible,.pcard:focus-visible,.act:focus-visible{outline-color:#8050
 @media(max-width:1000px){#top{padding:9px 12px;gap:10px}.brand{font-size:24px}.brand:after{font-size:8px}.meta{font-size:12px}#top button{padding:5px 9px}.pane{padding:9px}#cards{grid-template-columns:repeat(4,59px)}.pcard{width:59px;height:87px}.modal{padding:23px}.field label{min-width:98px}}
 @media(max-width:760px){#top{min-height:56px;gap:8px}.brand{font-size:22px}.brand:after{font-size:7px}#infobar{padding:5px}.pl{min-height:59px;padding:6px}.pl .nm{font-size:13px}.pl .vp{font-size:22px}#dock{display:block;background:#faf6eb}#sheetTabs button{background:#f5ecda;color:#775c3c}#sheetTabs button.on{color:#49301c;border-color:#9d8052;background:#e8d7b5}#menu.open{background:#49382a}#mapbtns{right:7px;top:8px}#mapbtns button{font-size:12px;padding:5px 8px}#mapwrap:after{font-size:7px;left:9px;bottom:8px}#cards{grid-template-columns:repeat(8,minmax(48px,1fr));gap:4px}.pcard{width:auto;height:88px}.modal{max-width:93vw;padding:20px}.modal h2{font-size:27px}.avgrid{gap:5px}.avopt{min-width:64px;max-width:78px}.field{flex-wrap:wrap}.field label{min-width:85px}.seg .hint{white-space:normal}.modal .btns button{font-size:14px;padding:8px 13px}}
 .atlas-connection-error{position:fixed;z-index:10000;left:50%;bottom:25px;transform:translateX(-50%);width:min(640px,92vw);padding:18px 22px;background:#faf3df;color:#78432e;border:1px solid #ae8060;box-shadow:0 10px 40px #46311f33;font:16px/1.5 Garamond,serif}.atlas-connection-error button{margin-left:10px}
+/* Accessible city navigator: keep text and controls legible in the light atlas theme. */
+#cityNavigator{background:#faf6eb;border-color:#8c7654;box-shadow:0 5px 18px #35271f30;color:#392719}
+#cityNavigator summary{position:sticky;top:0;z-index:5;background:inherit;color:#392719;padding-right:82px}
+#cityNavigator .city-nav-close{position:sticky;top:36px;align-self:flex-end;z-index:6;padding:3px 8px;margin-bottom:8px;font-size:12px}
+#cityNavigator .city-help,#cityNavigator .city-section-title{color:#5a4525}
+#cityNavigator .city-option{background:#fffdf6;border-color:#9a8058;color:#302012}
+#cityNavigator .city-option:hover{background:#e8ddc5;border-color:#66483a}
+#cityNavigator .city-option:focus-visible{outline:3px solid #80504a;outline-offset:2px}
+html.a11y-contrast #cityNavigator{background:#000;border-color:#ffeb00;color:#fff}
+html.a11y-contrast #cityNavigator summary,html.a11y-contrast #cityNavigator .city-help,html.a11y-contrast #cityNavigator .city-section-title{color:#fff}
+html.a11y-contrast #cityNavigator .city-option{background:#000;border-color:#ffeb00;color:#fff}
+html.a11y-contrast #cityNavigator .city-option:focus-visible{outline-color:#ffeb00}
+html.a11y-contrast #mapbtns #btnCities[aria-expanded="true"]{background:#ffeb00;color:#000}
+html.a11y-contrast .modal{background:#fff!important;border-color:#000!important;color:#000!important;box-shadow:0 0 0 4px #ffeb00,0 18px 50px #000!important}
+html.a11y-contrast .modal *:not(button){color:#000!important}
+html.a11y-contrast .modal:before{border-color:#000!important}
+html.a11y-contrast .modal button{background:#fff!important;border:2px solid #000!important;color:#000!important;box-shadow:none!important}
+html.a11y-contrast .modal button.on,html.a11y-contrast .modal button.primary{background:#ffeb00!important;color:#000!important}
+html.a11y-contrast .modal button:focus-visible{outline:3px solid #000!important;outline-offset:2px}
+.a11y-setting{flex:1;min-width:0}
+.a11y-help{margin-top:5px;color:#715736;font-size:12px;line-height:1.45}
+html.a11y-contrast .modal .a11y-help{color:#000!important}
+/* Keep the atlas palette light, but make all inherited UI text and status colors dark. */
+html.a11y-contrast{
+  --ink0:#fff;--ink1:#fff;--ink2:#f2f2f2;--ink3:#e5e5e5;--ink4:#d8d8d8;
+  --rule:#555;--rule2:#111;--gold:#604300;--gold2:#111;--goldq:#604300;
+  --txt:#111;--txt2:#222;--dim:#333;--dim2:#444;
+  --crimson:#52001c;--crimson2:#760025;--good:#174d24;--bad:#800000;
+}
+/* Preserve light text where the game intentionally uses a dark panel. */
+html.a11y-contrast #orderDraw,html.a11y-contrast #startSplash,html.a11y-contrast #orderStrip,
+html.a11y-contrast .afc,html.a11y-contrast #yourTurn .pill{
+  --ink0:#000;--ink1:#050505;--ink2:#111;--ink3:#1d1d1d;--ink4:#292929;
+  --rule:#d8d8d8;--rule2:#ffeb00;--gold:#ffeb00;--gold2:#fff;--goldq:#d6bd00;
+  --txt:#fff;--txt2:#eee;--dim:#ddd;--dim2:#ccc;--good:#a6ffad;--bad:#ffaaaa;
+}
+html.a11y-contrast #map .lk{stroke:#161616!important;stroke-width:2.5px;opacity:1}
+html.a11y-contrast #map .lk.sea{stroke:#064766!important;stroke-dasharray:7 4}
+html.a11y-contrast button:focus-visible,html.a11y-contrast .pcard:focus-visible,html.a11y-contrast .act:focus-visible{
+  outline:3px solid #111!important;box-shadow:0 0 0 5px #ffeb00!important
+}
+html.a11y-contrast #cityNavigator summary:focus-visible,html.a11y-contrast #cityNavigator .city-option:focus-visible,
+html.a11y-contrast .modal button:focus-visible{box-shadow:0 0 0 5px #ffeb00!important}
+/* Dark high contrast is a complete alternate palette, not a text-only inversion. */
+html.a11y-contrast-dark{
+  --ink0:#000;--ink1:#050505;--ink2:#111;--ink3:#1a1a1a;--ink4:#222;
+  --rule:#aaa;--rule2:#ffeb00;--gold:#ffeb00;--gold2:#fff;--goldq:#ffeb00;
+  --txt:#fff;--txt2:#eee;--dim:#ddd;--dim2:#ccc;--good:#a6ffad;--bad:#ffaaaa;
+}
+html.a11y-contrast-dark body,html.a11y-contrast-dark #top,html.a11y-contrast-dark #infobar,
+html.a11y-contrast-dark #dock,html.a11y-contrast-dark #mapwrap,html.a11y-contrast-dark #mapbtns,
+html.a11y-contrast-dark #mapbtns button,html.a11y-contrast-dark .pl,html.a11y-contrast-dark .mz,
+html.a11y-contrast-dark .pane,html.a11y-contrast-dark .pcard,html.a11y-contrast-dark .act,
+html.a11y-contrast-dark #confirm,html.a11y-contrast-dark .mt,html.a11y-contrast-dark .modal,
+html.a11y-contrast-dark #cardpop,html.a11y-contrast-dark .toast,html.a11y-contrast-dark #hint,
+html.a11y-contrast-dark #tip,html.a11y-contrast-dark #playbar,html.a11y-contrast-dark #banner,
+html.a11y-contrast-dark #logpanel,html.a11y-contrast-dark .coach .bub,html.a11y-contrast-dark .resume,
+html.a11y-contrast-dark #cityNavigator,html.a11y-contrast-dark #cityNavigator .city-option{
+  background:#000!important;color:#fff!important;border-color:#ffeb00!important;box-shadow:none
+}
+html.a11y-contrast-dark #map{background:#000!important}
+html.a11y-contrast-dark #app *:not(svg):not(path){color:#fff!important}
+html.a11y-contrast-dark #app button{background:#000!important;color:#fff!important;border-color:#ffeb00!important}
+html.a11y-contrast-dark #app button.primary,html.a11y-contrast-dark #app button.on{
+  background:#ffeb00!important;color:#000!important
+}
+html.a11y-contrast-dark #mapbtns #btnCities[aria-expanded="true"]{background:#ffeb00!important;color:#000!important}
+html.a11y-contrast-dark #cityNavigator .city-nav-close{background:#000!important;color:#fff!important;border:2px solid #ffeb00!important}
+html.a11y-contrast-dark #top button.primary,html.a11y-contrast-dark #mapbtns button.on,
+html.a11y-contrast-dark button.on,html.a11y-contrast-dark .pcard.sel,html.a11y-contrast-dark .act.sel,
+html.a11y-contrast-dark .pl.active,html.a11y-contrast-dark .mz.mine{
+  background:#ffeb00!important;color:#000!important;border-color:#ffeb00!important
+}
+html.a11y-contrast-dark #app :is(button.on,.pcard.sel,.act.sel,.pl.active,.mz.mine),
+html.a11y-contrast-dark #app .modal button.primary{color:#000!important}
+html.a11y-contrast-dark #infobar .pl.active{background:#ffeb00!important;border-color:#ffeb00!important}
+html.a11y-contrast-dark #sheetTabs button,html.a11y-contrast-dark #acttabs button{
+  background:#000!important;color:#fff!important;border-color:#ffeb00!important
+}
+html.a11y-contrast-dark #sheetTabs button.on,html.a11y-contrast-dark #acttabs button.on{
+  background:#ffeb00!important;color:#000!important
+}
+html.a11y-contrast-dark #map .g-sea rect{fill:#000!important}
+html.a11y-contrast-dark #map .land{fill:#151515!important;stroke:#fff!important}
+html.a11y-contrast-dark #map .grat{stroke:#aaa!important;opacity:.65!important}
+html.a11y-contrast-dark #map .zone-lbl,html.a11y-contrast-dark #map .reg-lbl,
+html.a11y-contrast-dark #map .dotlbl{fill:#fff!important;stroke:#000!important}
+html.a11y-contrast-dark #map .dot{fill:#ffeb00!important;stroke:#000!important;stroke-width:2.4px}
+html.a11y-contrast-dark #map .lk{stroke:#ffeb00!important;stroke-width:2.5px;opacity:1}
+html.a11y-contrast-dark #map .lk.sea{stroke:#00ffff!important;stroke-dasharray:7 4}
+html.a11y-contrast-dark #map .plate .nm rect{fill:#000!important;stroke:#ffeb00!important;stroke-width:1.5px}
+html.a11y-contrast-dark #map .plate .nm text{fill:#fff!important;stroke:#000!important}
+html.a11y-contrast-dark #mapwrap:after{color:#fff!important}
+html.a11y-contrast-dark .modal .avopt,html.a11y-contrast-dark #cardpop .cp-head,
+html.a11y-contrast-dark #cardpop .cp-city{background:#000!important;color:#fff!important;border-color:#ffeb00!important}
+html.a11y-contrast-dark .modal .avopt.on{background:#ffeb00!important;color:#000!important}
+html.a11y-contrast-dark .modal:before{color:#fff!important;border-color:#ffeb00!important}
+html.a11y-contrast-dark .modal:after{border-color:#ffeb00!important}
+html.a11y-contrast-dark .modal button{background:#000!important;color:#fff!important;border:2px solid #ffeb00!important}
+html.a11y-contrast-dark .modal button.on,html.a11y-contrast-dark .modal button.primary{
+  background:#ffeb00!important;color:#000!important
+}
+html.a11y-contrast-dark #app .modal button.on,html.a11y-contrast-dark #app .modal button.primary{color:#000!important}
+html.a11y-contrast-dark :is(button,.pcard,.act,#cityNavigator summary):focus-visible{
+  outline:3px solid #ffeb00!important;outline-offset:3px;box-shadow:0 0 0 5px #000!important
+}
+/* Make the Larger setting visibly affect the whole interface, including theme-sized controls. */
+html.a11y-large-text body{font-size:18px!important;line-height:1.55!important}
+html.a11y-large-text #app .modal .sub{font-size:18px!important;line-height:1.5!important}
+html.a11y-large-text #app :is(button,.brand,.chip,.meta,.pl .nm,.pl .r2,.pl .r3,.pl .lv,.pl .vp,
+  .mz .zn,.sec,.sub,.pcard .kind,.pcard .nm,#acttabs button,.act .tx,.act .gain,.act .src,.act .price,
+  .mt,.mrow,.lp-head,.le,.toast,.field>label,.seg .hint,.modal .sub,.modal h2,
+  .city-help,.city-section-title,.city-option){
+  font-size:max(18px,1.15em)!important;line-height:1.4!important
+}
+html.a11y-large-text #app :is(#mapbtns button,#confirm,#log,#log2,#tip,#hint,#playbar,#banner,#cityNavigator summary){
+  font-size:max(18px,1.15em)!important;line-height:1.4!important
+}
+html.a11y-large-text #app .pl .vp{font-size:max(27px,1.15em)!important}
+html.a11y-large-text #app .brand{font-size:max(28px,1.15em)!important}
+html.a11y-large-text #app .modal h2{font-size:max(32px,1.15em)!important}
+html.a11y-large-text .pl{min-height:94px;padding:10px}
+html.a11y-large-text #mapbtns{flex-wrap:wrap;max-width:min(620px,calc(100% - 24px))}
+/* Keep action tabs and their industry thumbnails aligned when enlarged text wraps. */
+html.a11y-large-text #app #acttabs{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:thin}
+html.a11y-large-text #app #acttabs button{flex:0 0 auto;white-space:nowrap}
+html.a11y-large-text #app #actlist .act{height:auto;min-height:144px;align-items:flex-start}
+html.a11y-large-text #app #actlist .act .body{align-self:flex-start}
+html.a11y-large-text #app #actlist .act .tx{font-size:18px!important;line-height:1.25!important}
+html.a11y-large-text #app #actlist .act .gain,
+html.a11y-large-text #app #actlist .act .src{font-size:16px!important;line-height:1.25!important}
+html.a11y-large-text #app #actlist .act .athumb{margin-top:2px}
+html.a11y-large-text #cards{grid-template-columns:repeat(auto-fit,minmax(78px,1fr))}
+html.a11y-large-text #cards .pcard{width:auto;height:116px}
+html.a11y-large-text #cards .pcard .nm{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+html.a11y-large-text .act .tx,html.a11y-large-text .act .gain,html.a11y-large-text .act .src{
+  white-space:normal!important;overflow:visible!important;text-overflow:clip!important
+}
+
+/* English labels wrap without covering the card artwork or confirmation controls. */
+.pcard.todisc::before{top:4px;right:4px;left:auto;width:auto;min-width:44px;max-width:calc(100% - 8px);box-sizing:border-box;padding:3px 6px;background:#8b3028;color:#fffaf0;font:700 11px/1.2 Garamond,Georgia,serif;white-space:nowrap;text-align:center;border-radius:3px}
+.dsel{flex-wrap:wrap;gap:6px}.dsel .dl{color:#77352b;font-weight:700;flex-shrink:0}.dchip{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+#confirm .ct{min-width:0;flex:1}#confirm .t1,#confirm .t2{white-space:normal;overflow-wrap:anywhere}
+#confirm{flex-wrap:wrap}.pcard .nm{white-space:normal;line-height:1.15;overflow-wrap:anywhere}.pcard .kind{font-size:10px;letter-spacing:0}
+.toast,.actfeed{background:#fbf5e6;color:#3f2b1c;border-color:#99794f}.actfeed .t,.actfeed .w{color:#3f2b1c}.actfeed .w{opacity:1}
+#playbar,.yourturn .pill{background:#fbf5e6;color:#3f2b1c}.ptap{color:#5a4126}.fxtext{text-shadow:0 1px 2px #22150b,1px 0 2px #22150b,-1px 0 2px #22150b}
+.field,.seg,.modal .btns,.mattabs{flex-wrap:wrap}.field label{white-space:normal}.modal{box-sizing:border-box;max-width:min(780px,calc(100vw - 24px))}.score{font-size:12px}.modal:has(.score){overflow-x:auto}
+@media(max-width:760px){#confirm>button{flex:1}.field label{flex-basis:100%}.avgrid{max-width:100%}.dsel .dl{flex-basis:100%}.mrow2 .bn{white-space:normal;line-height:1.1}}
+.afc{background:#fbf5e6;color:#3f2b1c}.afc .t{color:#3f2b1c}.afc .w{color:#624c32}
+#yourTurn .pill{background:#fbf5e6;color:#3f2b1c;max-width:calc(100vw - 28px);box-sizing:border-box}#yourTurn .pill b{color:#49321d;letter-spacing:0}#yourTurn .pill span{color:#624c32}
+
+.mrow2{grid-template-columns:22px 68px 16px 30px minmax(18px,1fr) auto 22px;gap:4px}.mrow2 .bn{font:600 12px/1.1 Garamond,Georgia,serif;white-space:normal;overflow-wrap:anywhere}.mrow2 .give{font-size:10.5px}
+.pcard .art{min-height:20px}.pcard .nm{font-size:11px;line-height:1.1}.pcard.region .nm{font-size:10px;line-height:1.1}
+@media(min-width:1001px){#cards{grid-template-columns:repeat(4,76px)}.pcard{width:76px;height:106px}}
+@media(min-width:1201px){#dock{grid-template-columns:auto minmax(0,1fr) 340px}}
+
+@media(max-width:760px){#top{flex-wrap:wrap;padding:8px;gap:6px}.brand{font-size:20px}#top .spacer{min-width:0}.meta{font-size:11px}.chip{font-size:10px;padding:4px 6px}.musicbtn{margin-right:0}#app,#infobar,#mapwrap{min-width:0}#players{min-width:0;max-width:100%;overflow-x:auto}#mapbtns{max-width:calc(100vw - 16px)}#mapbtns button{padding:5px 7px}#cards .pcard{width:68px;min-width:68px;height:96px}.modal .field{gap:8px}.modal .field label{flex-basis:100%;min-width:0}.modal .avgrid{grid-template-columns:repeat(3,minmax(0,1fr))}.modal .avopt{min-width:0;max-width:none}}

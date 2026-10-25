@@ -197,3 +197,22 @@ html.a11y-large-text #cards .pcard .nm{white-space:normal!important;overflow:vis
 html.a11y-large-text .act .tx,html.a11y-large-text .act .gain,html.a11y-large-text .act .src{
   white-space:normal!important;overflow:visible!important;text-overflow:clip!important
 }
+
+/* English labels wrap without covering the card artwork or confirmation controls. */
+.pcard.todisc::before{top:4px;right:4px;left:auto;width:auto;min-width:44px;max-width:calc(100% - 8px);box-sizing:border-box;padding:3px 6px;background:#8b3028;color:#fffaf0;font:700 11px/1.2 Garamond,Georgia,serif;white-space:nowrap;text-align:center;border-radius:3px}
+.dsel{flex-wrap:wrap;gap:6px}.dsel .dl{color:#77352b;font-weight:700;flex-shrink:0}.dchip{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+#confirm .ct{min-width:0;flex:1}#confirm .t1,#confirm .t2{white-space:normal;overflow-wrap:anywhere}
+#confirm{flex-wrap:wrap}.pcard .nm{white-space:normal;line-height:1.15;overflow-wrap:anywhere}.pcard .kind{font-size:10px;letter-spacing:0}
+.toast,.actfeed{background:#fbf5e6;color:#3f2b1c;border-color:#99794f}.actfeed .t,.actfeed .w{color:#3f2b1c}.actfeed .w{opacity:1}
+#playbar,.yourturn .pill{background:#fbf5e6;color:#3f2b1c}.ptap{color:#5a4126}.fxtext{text-shadow:0 1px 2px #22150b,1px 0 2px #22150b,-1px 0 2px #22150b}
+.field,.seg,.modal .btns,.mattabs{flex-wrap:wrap}.field label{white-space:normal}.modal{box-sizing:border-box;max-width:min(780px,calc(100vw - 24px))}.score{font-size:12px}.modal:has(.score){overflow-x:auto}
+@media(max-width:760px){#confirm>button{flex:1}.field label{flex-basis:100%}.avgrid{max-width:100%}.dsel .dl{flex-basis:100%}.mrow2 .bn{white-space:normal;line-height:1.1}}
+.afc{background:#fbf5e6;color:#3f2b1c}.afc .t{color:#3f2b1c}.afc .w{color:#624c32}
+#yourTurn .pill{background:#fbf5e6;color:#3f2b1c;max-width:calc(100vw - 28px);box-sizing:border-box}#yourTurn .pill b{color:#49321d;letter-spacing:0}#yourTurn .pill span{color:#624c32}
+
+.mrow2{grid-template-columns:22px 68px 16px 30px minmax(18px,1fr) auto 22px;gap:4px}.mrow2 .bn{font:600 12px/1.1 Garamond,Georgia,serif;white-space:normal;overflow-wrap:anywhere}.mrow2 .give{font-size:10.5px}
+.pcard .art{min-height:20px}.pcard .nm{font-size:11px;line-height:1.1}.pcard.region .nm{font-size:10px;line-height:1.1}
+@media(min-width:1001px){#cards{grid-template-columns:repeat(4,76px)}.pcard{width:76px;height:106px}}
+@media(min-width:1201px){#dock{grid-template-columns:auto minmax(0,1fr) 340px}}
+
+@media(max-width:760px){#top{flex-wrap:wrap;padding:8px;gap:6px}.brand{font-size:20px}#top .spacer{min-width:0}.meta{font-size:11px}.chip{font-size:10px;padding:4px 6px}.musicbtn{margin-right:0}#app,#infobar,#mapwrap{min-width:0}#players{min-width:0;max-width:100%;overflow-x:auto}#mapbtns{max-width:calc(100vw - 16px)}#mapbtns button{padding:5px 7px}#cards .pcard{width:68px;min-width:68px;height:96px}.modal .field{gap:8px}.modal .field label{flex-basis:100%;min-width:0}.modal .avgrid{grid-template-columns:repeat(3,minmax(0,1fr))}.modal .avopt{min-width:0;max-width:none}}
