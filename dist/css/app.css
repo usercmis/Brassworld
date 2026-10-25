@@ -638,3 +638,7 @@ table.score tr.me td{background:rgba(201,161,90,.08)}
 .modal.wide::after {
   display: none;
 }
+#beginnerHelp { padding: 10px; line-height: 1.5; }
+#beginnerHelp p { margin: 8px 0; }
+#beginnerHelp summary { cursor: pointer; font-weight: bold; }
+#beginnerHelp[hidden] { display: none; }

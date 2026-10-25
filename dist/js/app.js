@@ -1,3 +1,4 @@
+import { shortlist, moveSummary } from "./display-modes.js";
 // 《工业革命：世界》前端主程序
 import { SYMBOLS, PCOL, IND_ART, artCSS, regionArt, iconHTML, cubeHTML, avatarHTML, AVATARS, AVATAR_ZH,
   ROMAN, BONUS_FULL, BONUS_SHORT, IND_ORDER } from "./art.js";
@@ -16,8 +17,9 @@ const isMobile = () => matchMedia("(max-width: 760px)").matches;
 const savedPrefs = (() => { try { const value = JSON.parse(localStorage.getItem("bw_prefs") || "{}"); return value && typeof value === "object" ? value : {}; } catch (e) { return {}; } })();
 const savedContrastMode = savedPrefs.contrastMode ?? (savedPrefs.highContrast ? "light" : "off");
 const SET = Object.assign({ speed: 1, step: true, follow: true, hints: false, level: "normal", avatar: "uk", music: true, vol: "0.35",
-  contrastMode: "off", largeText: false, reduceMotion: false }, savedPrefs, { contrastMode: savedContrastMode });
+  displayMode: "classic", contrastMode: "off", largeText: false, reduceMotion: false }, savedPrefs, { contrastMode: savedContrastMode });
 delete SET.highContrast;
+if (!["classic", "beginner"].includes(SET.displayMode)) SET.displayMode = "classic";
 function savePrefs() { try { localStorage.setItem("bw_prefs", JSON.stringify(SET)); } catch (e) { } }
 function applyA11yPrefs() {
   const root = document.documentElement;
@@ -105,7 +107,7 @@ async function resumeLocal(quiet) {
   if (!quiet) toast("已读取本地存档：" + st.eraZh + " 第 " + st.round + " 轮");
   return true;
 }
-function PREV_CLEAR() { S = null; D = null; UI.sel = null; UI.filter = null; }
+function PREV_CLEAR() { UI.moveSummary = null; UI.allOptions = false; S = null; D = null; UI.sel = null; UI.filter = null; }
 
 // ================= 提交动作 =================
 async function submit(path, body) {
@@ -136,6 +138,8 @@ async function submit(path, body) {
 
 async function applyState(st, animate) {
   if (st.error) toast(st.error);
+  const summary = S && st.ver !== S.ver && !st.error && !st.stale ? moveSummary(S, st) : null;
+  if (summary) { UI.moveSummary = summary; UI.allOptions = false; }
   saveLocal(st);
   const evs = st.events || [];
   const worth = evs.some(e => e.t === "act" || e.t === "round" || e.t === "era");
@@ -158,6 +162,7 @@ function renderAll() {
   else map.setTargets(null);
   if (UI.sel !== null) previewSel();
   renderHint();
+  renderBeginnerHelp();
 }
 
 function renderTop(st) {
@@ -527,6 +532,17 @@ function renderActions() {
   const nAct = st.actions.filter(a => !(a.kind === "DEVELOP" && a.dev && a.dev.length > 1)).length;
   $("#actCount").textContent = myTurn && nAct ? nAct : "";
   if (!myTurn) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">等待其他玩家…</div>`; return; }
+  if (SET.displayMode === "beginner" && !UI.allOptions && !UI.filter) {
+    tabs.innerHTML = '<button type="button" id="showAllOptions">Show All Options</button><button type="button" id="passbtn" class="passbtn">Pass</button>';
+    list.innerHTML = '<p>Strategy Advisor: its starred choice comes first. Other options are legal alternatives, not ranked recommendations.</p>' + shortlist(st.actions).map(a => `
+      <button type="button" class="act ${UI.sel === a.i ? "sel" : ""}" data-i="${a.i}" aria-pressed="${UI.sel === a.i}">
+      ${actThumb(a)}<span class="body"><span class="tx">${a.best ? "★ Advisor choice · " : "Alternative · "}${KIND_ZH[a.kind]}: ${actTitle(a)}</span>
+      <span class="gain">${actGain(a)}</span><span class="src">${explainMove(a)}</span></span>
+      <span class="price">$${a.cost ?? 0}</span></button>`).join("");
+    if (!st.actions.length) list.innerHTML += '<p>No legal actions available. You can pass.</p>';
+    $("#showAllOptions").onclick = () => { UI.allOptions = true; renderActions(); };
+    renderConfirm(); return;
+  }
   const kinds = KIND_ORDER.filter(k => g[k]);
   const best = st.actions.find(a => a.best);
   const player = me(st);
@@ -1422,6 +1438,7 @@ function showNewGame() {
   const d = modal(`<h2>工业革命 · 世界</h2>
     <div class="sub">Brass: Birmingham 同人世界地图 · 80 城 · 21 区域 · 4 人局（你与 3 个 AI）</div>
     ${resume}
+    <div class="field"><label>Interface mode</label>${seg("displayMode", [["classic", "Classic"], ["beginner", "Beginner"]], o.displayMode)}</div>
     <div class="field"><label>AI 难度</label>${seg("level", [["easy", "新手"], ["normal", "老练"], ["hard", "大师"]], o.level)}
       <div class="seg"><span class="hint" id="lvHint"></span></div></div>
     <div class="field"><label>推荐走法</label>${seg("hints", [["0", "关"], ["1", "开"]], o.hints ? "1" : "0")}</div>
@@ -1438,7 +1455,7 @@ function showNewGame() {
   if (ls) d.querySelector("#ngResume").onclick = async () => { d.remove(); await resumeLocal(); };
   const c = d.querySelector("#ngCancel"); if (c) c.onclick = () => d.remove();
   d.querySelector("#ngGo").onclick = async () => {
-    Object.assign(SET, { level: o.level, hints: o.hints, avatar: o.avatar }); savePrefs();
+    Object.assign(SET, { displayMode: o.displayMode, level: o.level, hints: o.hints, avatar: o.avatar }); savePrefs();
     d.remove(); $$("#final").forEach(x => x.remove());
     PREV_CLEAR();
     // 开局顺位随机，AI 可能先走；大师、宗师难度要算几秒 —— 没提示的话像是点了没反应
@@ -1586,6 +1603,7 @@ function startTour(novice) {
 }
 function showSettings() {
   const d = modal(`<button class="x">✕</button><h2>设置</h2><div class="sub">保存在这台设备上</div>
+    <div class="field"><label>Interface mode</label>${seg("displayMode", [["classic", "Classic"], ["beginner", "Beginner"]], SET.displayMode)}</div>
     <div class="field"><label>AI 行动</label>${seg("step", [["1", "逐步（点击继续）"], ["0", "自动播放"]], SET.step ? "1" : "0")}</div>
     <div class="field"><label>动画速度</label>${seg("speed", [["1.6", "慢"], ["1", "正常"], ["0.5", "快"], ["0.15", "极快"]], SET.speed)}</div>
     <div class="field"><label>镜头跟随</label>${seg("follow", [["1", "跟随 AI 行动"], ["0", "不动"]], SET.follow ? "1" : "0")}</div>
@@ -1598,6 +1616,7 @@ function showSettings() {
     <div class="field"><label>存档</label><button id="stExport">导出存档文件</button><button id="stImport">导入存档文件</button></div>
     <div class="btns"><button class="primary">完成</button></div>`);
   bindSeg(d, async (k, v) => {
+    if (k === "displayMode") { SET.displayMode = v; UI.allOptions = false; if (S && S.started) renderAll(); }
     if (k === "speed") SET.speed = +v;
     if (k === "step") { SET.step = v === "1"; if (!SET.step) continueTap(); }
     if (k === "follow") SET.follow = v === "1";
@@ -1787,6 +1806,7 @@ function bindUI() {
   // 行动列表
   $("#acttabs").addEventListener("click", async e => {
     const b = e.target.closest("button"); if (!b) return;
+    if (b.id === "showAllOptions") return;
     if (b.id === "clearFilter") { UI.filter = null; renderActions(); return; }
     if (b.id === "passbtn") {
       clearSel(); UI.passMode = true; UI.discard = [...(S.passDiscard || [0])];
@@ -1843,3 +1863,22 @@ function bindUI() {
 }
 
 boot();
+
+function renderBeginnerHelp() {
+  let el = $("#beginnerHelp");
+  if (!el) { el = document.createElement("div"); el.id = "beginnerHelp"; $("#actPane").prepend(el); }
+  el.hidden = SET.displayMode !== "beginner";
+  if (el.hidden) return;
+  el.replaceChildren();
+  if (UI.moveSummary) {
+    const summary = document.createElement("p"); summary.setAttribute("role", "status");
+    summary.textContent = "What changed: " + UI.moveSummary; el.append(summary);
+  }
+  const guide = document.createElement("details");
+  guide.innerHTML = `<summary>Beginner reference · cards, resources and industries</summary>
+  <p>Cards: a region card permits building in its region; an industry card permits that industry in your network. Wild cards substitute for their indicated type. Most actions discard one card; Scout discards three.</p>
+  <p>Resources: coal requires a connected supply; iron does not need a network connection. Beer (provisions) supports selling and some railway actions; the legal action and confirmation show exactly which supplies are used. Money pays costs; income controls recurring earnings; victory points determine the winner.</p>
+  <p>Industries: cotton mills, manufacturers and luxury industries produce goods to sell. Coal mines and iron works supply construction resources. Breweries provide beer. Tiles show their costs and benefits; income and scoring depend on the normal flip and era rules. Develop removes lower tiles to unlock later levels.</p>
+  <p>The full world map, city navigator, markets, hand and industry board remain available. Select Show All Options to browse every legal action. Settings lets you switch to Classic at any time.</p>`;
+  el.append(guide);
+}
