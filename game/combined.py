@@ -18,7 +18,7 @@ def new_game(options=None, seed=None):
     players = [dict(id=i, name=['You','Campbell','Hawthorne','Kessler'][i], money=30, income=5, vp=0,
         home=homes[i], avatar=options.get('avatar','uk') if i==0 else ['uk','eu','us','in'][i],
         supply={ind:[t['level'] for t in ts for _ in range(t['copies'])] for ind,ts in BOARD['tiles'].items()}) for i in range(4)]
-    return dict(engine=ENGINE, ver=1, era='BOTH', round=1, players=players, placed=[], builtLinks=[], over=False,
+    return dict(engine=ENGINE, currency='USD', ver=1, era='BOTH', round=1, players=players, placed=[], builtLinks=[], over=False,
         log=[], hints=bool(options.get('hints',True)), vpBreak={str(i):{'tiles':0,'links':0} for i in range(4)}, aiStep=seed or 0)
 
 def reach(s,pid):
@@ -49,7 +49,7 @@ def execute(s,pid,a):
     if a['kind']=='BUILD':
         p['supply'][a['industry']].remove(a['level']); p['income']+=2
         s['placed'].append(dict(id=f"tile-{len(s['placed'])}",city=a['city'],slot=a['slot'],industry=a['industry'],level=a['level'],owner=pid,flipped=True,res=0))
-        category='tiles'; text=f"Built {NAMES[a['industry']]} in {CITIES[a['city']]['en']}: +{a['vp']} VP, income +£2."
+        category='tiles'; text=f"Built {NAMES[a['industry']]} in {CITIES[a['city']]['en']}: +{a['vp']} VP, income +US$2."
     else:
         s['builtLinks'].append(dict(a=a['link'][0],b=a['link'][1],owner=pid)); category='links'
         text=f"Connected {CITIES[a['link'][0]]['en']} to {CITIES[a['link'][1]]['en']}: +3 VP."
@@ -61,11 +61,11 @@ def public_state(s):
     for p in s['players']:
         ps.append(dict(p,isMe=p['id']==0,homeZh={'LANCS':'Lancashire','MIDYORK':'Midlands & Yorkshire','NEENG':'New England','LAKES':'Great Lakes'}[p['home']],levelZh='' if p['id']==0 else 'Beginner AI',hand=0,
             supply={ind:dict(Counter(map(str,ls))) for ind,ls in p['supply'].items()},tiles=sum(t['owner']==p['id'] for t in s['placed']),links=sum(l['owner']==p['id'] for l in s['builtLinks'])))
-    return dict(started=True,engine=ENGINE,mode='combined',mapId='world-combined-v1',era='BOTH',eraZh='Combined Era',round=s['round'],deck=0,
+    return dict(started=True,currency='USD',engine=ENGINE,mode='combined',mapId='world-combined-v1',era='BOTH',eraZh='Combined Era',round=s['round'],deck=0,
         ver=s['ver'],over=s['over'],players=ps,active=0,turnOrder=[0,1,2,3],actionsLeft=0 if s['over'] else 1,actionsTotal=1,
         hand=[dict(kind='INDUSTRY',v=ind,label=name) for ind,name in NAMES.items()],placed=deepcopy(s['placed']),builtLinks=deepcopy(s['builtLinks']),
         reach=sorted(reach(s,0)),hubs=[],markets={},zoneGroup={},myZones=[],actions=actions(s),buildInfo={},passDiscard=[],linkedPairs=[],contested=[],
-        log=deepcopy(s['log']),events=[],hints=s['hints'],vpBreak=deepcopy(s['vpBreak']),save=dict(engine=ENGINE,game=deepcopy(s)))
+        log=[dict(entry,text=entry['text'].replace('£','US$')) for entry in s['log']],events=[],hints=s['hints'],vpBreak=deepcopy(s['vpBreak']),save=dict(engine=ENGINE,game=deepcopy(s)))
 
 def handle(s,path,body):
     if path=='/api/settings': s['hints']=bool(body.get('hints')); return public_state(s)

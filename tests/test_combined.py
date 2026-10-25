@@ -5,6 +5,7 @@ from game import combined as c
 class CombinedTests(unittest.TestCase):
     def test_full_game_and_scoring(self):
         s=c.new_game(seed=4); previous=[]
+        self.assertEqual(c.public_state(s)['currency'],'USD')
         for r in range(1,9):
             self.assertEqual(s['round'],r)
             opts=c.actions(s); a=next((a for a in opts if a['kind']=='BUILD'),opts[0])
@@ -37,6 +38,12 @@ class CombinedTests(unittest.TestCase):
         c.handle(s,'/api/action',{'v':s['ver'],'i':plans[0]['i']})
         self.assertEqual(s['players'][0]['income'],7)
         self.assertTrue(any(t['industry']=='PROV' and t['level']==4 for t in s['placed']))
+
+    def test_legacy_currency_display(self):
+        s=c.new_game()
+        s['log']=[dict(who='You',text='Income +£2.',era='BOTH',round=1)]
+        self.assertEqual(c.public_state(s)['log'][0]['text'],'Income +US$2.')
+        self.assertEqual(s['log'][0]['text'],'Income +£2.')
 
     def test_atomic_invalid_stale_save(self):
         s=c.new_game(); before=deepcopy(s)
