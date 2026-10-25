@@ -577,3 +577,6 @@ table.score tr.me td{background:rgba(201,161,90,.08)}
 #markets {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+#mapbtns {
+  display: none !important;
+}
