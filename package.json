@@ -1,1 +1,16 @@
-{"name":"brassworld-atlas-local","version":"1.0.0","private":true,"scripts":{"dev":"python3 serve.py --host 0.0.0.0"}}
+{
+  "name": "brassworld-atlas-local",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "python3 serve.py --host 0.0.0.0",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser-smoke.cjs",
+    "check:syntax": "node --check dist/js/app.js && node --check dist/js/art.js && node --check dist/js/map.js && node --check dist/theme/english.js && node --check dist/theme/locale.js && node --check dist/theme/tutorial.js",
+    "test:full-game": "node tests/full-game.cjs"
+  },
+  "type": "module",
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

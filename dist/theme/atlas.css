@@ -58,3 +58,22 @@ button:focus-visible,.pcard:focus-visible,.act:focus-visible{outline-color:#8050
 @media(max-width:1000px){#top{padding:9px 12px;gap:10px}.brand{font-size:24px}.brand:after{font-size:8px}.meta{font-size:12px}#top button{padding:5px 9px}.pane{padding:9px}#cards{grid-template-columns:repeat(4,59px)}.pcard{width:59px;height:87px}.modal{padding:23px}.field label{min-width:98px}}
 @media(max-width:760px){#top{min-height:56px;gap:8px}.brand{font-size:22px}.brand:after{font-size:7px}#infobar{padding:5px}.pl{min-height:59px;padding:6px}.pl .nm{font-size:13px}.pl .vp{font-size:22px}#dock{display:block;background:#faf6eb}#sheetTabs button{background:#f5ecda;color:#775c3c}#sheetTabs button.on{color:#49301c;border-color:#9d8052;background:#e8d7b5}#menu.open{background:#49382a}#mapbtns{right:7px;top:8px}#mapbtns button{font-size:12px;padding:5px 8px}#mapwrap:after{font-size:7px;left:9px;bottom:8px}#cards{grid-template-columns:repeat(8,minmax(48px,1fr));gap:4px}.pcard{width:auto;height:88px}.modal{max-width:93vw;padding:20px}.modal h2{font-size:27px}.avgrid{gap:5px}.avopt{min-width:64px;max-width:78px}.field{flex-wrap:wrap}.field label{min-width:85px}.seg .hint{white-space:normal}.modal .btns button{font-size:14px;padding:8px 13px}}
 .atlas-connection-error{position:fixed;z-index:10000;left:50%;bottom:25px;transform:translateX(-50%);width:min(640px,92vw);padding:18px 22px;background:#faf3df;color:#78432e;border:1px solid #ae8060;box-shadow:0 10px 40px #46311f33;font:16px/1.5 Garamond,serif}.atlas-connection-error button{margin-left:10px}
+
+/* English labels wrap without covering the card artwork or confirmation controls. */
+.pcard.todisc::before{top:4px;right:4px;left:auto;width:auto;min-width:44px;max-width:calc(100% - 8px);box-sizing:border-box;padding:3px 6px;background:#8b3028;color:#fffaf0;font:700 11px/1.2 Garamond,Georgia,serif;white-space:nowrap;text-align:center;border-radius:3px}
+.dsel{flex-wrap:wrap;gap:6px}.dsel .dl{color:#77352b;font-weight:700;flex-shrink:0}.dchip{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+#confirm .ct{min-width:0;flex:1}#confirm .t1,#confirm .t2{white-space:normal;overflow-wrap:anywhere}
+#confirm{flex-wrap:wrap}.pcard .nm{white-space:normal;line-height:1.15;overflow-wrap:anywhere}.pcard .kind{font-size:10px;letter-spacing:0}
+.toast,.actfeed{background:#fbf5e6;color:#3f2b1c;border-color:#99794f}.actfeed .t,.actfeed .w{color:#3f2b1c}.actfeed .w{opacity:1}
+#playbar,.yourturn .pill{background:#fbf5e6;color:#3f2b1c}.ptap{color:#5a4126}.fxtext{text-shadow:0 1px 2px #22150b,1px 0 2px #22150b,-1px 0 2px #22150b}
+.field,.seg,.modal .btns,.mattabs{flex-wrap:wrap}.field label{white-space:normal}.modal{box-sizing:border-box;max-width:min(780px,calc(100vw - 24px))}.score{font-size:12px}.modal:has(.score){overflow-x:auto}
+@media(max-width:760px){#confirm>button{flex:1}.field label{flex-basis:100%}.avgrid{max-width:100%}.dsel .dl{flex-basis:100%}.mrow2 .bn{white-space:normal;line-height:1.1}}
+.afc{background:#fbf5e6;color:#3f2b1c}.afc .t{color:#3f2b1c}.afc .w{color:#624c32}
+#yourTurn .pill{background:#fbf5e6;color:#3f2b1c;max-width:calc(100vw - 28px);box-sizing:border-box}#yourTurn .pill b{color:#49321d;letter-spacing:0}#yourTurn .pill span{color:#624c32}
+
+.mrow2{grid-template-columns:22px 68px 16px 30px minmax(18px,1fr) auto 22px;gap:4px}.mrow2 .bn{font:600 12px/1.1 Garamond,Georgia,serif;white-space:normal;overflow-wrap:anywhere}.mrow2 .give{font-size:10.5px}
+.pcard .art{min-height:20px}.pcard .nm{font-size:11px;line-height:1.1}.pcard.region .nm{font-size:10px;line-height:1.1}
+@media(min-width:1001px){#cards{grid-template-columns:repeat(4,76px)}.pcard{width:76px;height:106px}}
+@media(min-width:1201px){#dock{grid-template-columns:auto minmax(0,1fr) 340px}}
+
+@media(max-width:760px){#top{flex-wrap:wrap;padding:8px;gap:6px}.brand{font-size:20px}#top .spacer{min-width:0}.meta{font-size:11px}.chip{font-size:10px;padding:4px 6px}.musicbtn{margin-right:0}#app,#infobar,#mapwrap{min-width:0}#players{min-width:0;max-width:100%;overflow-x:auto}#mapbtns{max-width:calc(100vw - 16px)}#mapbtns button{padding:5px 7px}#cards .pcard{width:68px;min-width:68px;height:96px}.modal .field{gap:8px}.modal .field label{flex-basis:100%;min-width:0}.modal .avgrid{grid-template-columns:repeat(3,minmax(0,1fr))}.modal .avopt{min-width:0;max-width:none}}
