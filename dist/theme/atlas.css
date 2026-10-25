@@ -41,7 +41,6 @@ button:focus-visible,.pcard:focus-visible,.act:focus-visible{outline-color:#8050
 #mapbtns #btnCities[aria-expanded="true"]{background:#dfcfad;color:#4b3924}
 #hint,#tip,#playbar,#banner,#logpanel{background:rgba(250,246,234,.97);border-color:#b29b73;color:#493721;box-shadow:0 8px 28px #49321b20}
 #hint{font:14px Garamond,serif;max-width:min(760px,86%)}#tip{max-width:390px}#tip b{font-family:Playfair,serif;letter-spacing:0;font-size:15px}#logpanel{width:370px}.lp-head{letter-spacing:.12em}.le.sys{color:#64715a}
-#hint.hint-port{left:auto;right:12px;top:58px;transform:none;width:min(380px,calc(100% - 24px));max-width:380px;text-align:left;font-size:14px;line-height:1.4}
 #banner{font:italic 700 27px Playfair,serif;letter-spacing:.02em}
 #dock{background:#faf6eb;box-shadow:0 -3px 14px #58401809;grid-template-columns:auto minmax(0,1fr) 300px}
 .pane{padding:11px 14px}.sec{font:12px Garamond,serif;letter-spacing:.13em;text-transform:uppercase;color:#786043}.sec .sub{text-transform:none}
@@ -181,7 +180,6 @@ html.a11y-large-text #app :is(#mapbtns button,#confirm,#log,#log2,#tip,#hint,#pl
 html.a11y-large-text #app .pl .vp{font-size:max(27px,1.15em)!important}
 html.a11y-large-text #app .brand{font-size:max(28px,1.15em)!important}
 html.a11y-large-text #app .modal h2{font-size:max(32px,1.15em)!important}
-html.a11y-large-text #app #hint.hint-port{font-size:18px!important;line-height:1.35!important}
 html.a11y-large-text .pl{min-height:94px;padding:10px}
 html.a11y-large-text #mapbtns{flex-wrap:wrap;max-width:min(620px,calc(100% - 24px))}
 /* Keep action tabs and their industry thumbnails aligned when enlarged text wraps. */
@@ -199,4 +197,41 @@ html.a11y-large-text #cards .pcard .nm{white-space:normal!important;overflow:vis
 html.a11y-large-text .act .tx,html.a11y-large-text .act .gain,html.a11y-large-text .act .src{
   white-space:normal!important;overflow:visible!important;text-overflow:clip!important
 }
-@media(max-width:760px){#hint.hint-port{left:8px;right:8px;top:52px;width:auto;max-width:none}}
+
+/* English labels wrap without covering the card artwork or confirmation controls. */
+.pcard.todisc::before{top:4px;right:4px;left:auto;width:auto;min-width:44px;max-width:calc(100% - 8px);box-sizing:border-box;padding:3px 6px;background:#8b3028;color:#fffaf0;font:700 11px/1.2 Garamond,Georgia,serif;white-space:nowrap;text-align:center;border-radius:3px}
+.dsel{flex-wrap:wrap;gap:6px}.dsel .dl{color:#77352b;font-weight:700;flex-shrink:0}.dchip{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+#confirm .ct{min-width:0;flex:1}#confirm .t1,#confirm .t2{white-space:normal;overflow-wrap:anywhere}
+#confirm{flex-wrap:wrap}.pcard .nm{white-space:normal;line-height:1.15;overflow-wrap:anywhere}.pcard .kind{font-size:10px;letter-spacing:0}
+.toast,.actfeed{background:#fbf5e6;color:#3f2b1c;border-color:#99794f}.actfeed .t,.actfeed .w{color:#3f2b1c}.actfeed .w{opacity:1}
+#playbar,.yourturn .pill{background:#fbf5e6;color:#3f2b1c}.ptap{color:#5a4126}.fxtext{text-shadow:0 1px 2px #22150b,1px 0 2px #22150b,-1px 0 2px #22150b}
+.field,.seg,.modal .btns,.mattabs{flex-wrap:wrap}.field label{white-space:normal}.modal{box-sizing:border-box;max-width:min(780px,calc(100vw - 24px))}.score{font-size:12px}.modal:has(.score){overflow-x:auto}
+@media(max-width:760px){#confirm>button{flex:1}.field label{flex-basis:100%}.avgrid{max-width:100%}.dsel .dl{flex-basis:100%}.mrow2 .bn{white-space:normal;line-height:1.1}}
+.afc{background:#fbf5e6;color:#3f2b1c}.afc .t{color:#3f2b1c}.afc .w{color:#624c32}
+#yourTurn .pill{background:#fbf5e6;color:#3f2b1c;max-width:calc(100vw - 28px);box-sizing:border-box}#yourTurn .pill b{color:#49321d;letter-spacing:0}#yourTurn .pill span{color:#624c32}
+
+.mrow2{grid-template-columns:22px 68px 16px 30px minmax(18px,1fr) auto 22px;gap:4px}.mrow2 .bn{font:600 12px/1.1 Garamond,Georgia,serif;white-space:normal;overflow-wrap:anywhere}.mrow2 .give{font-size:10.5px}
+.pcard .art{min-height:20px}.pcard .nm{font-size:11px;line-height:1.1}.pcard.region .nm{font-size:10px;line-height:1.1}
+@media(min-width:1001px){#cards{grid-template-columns:repeat(4,76px)}.pcard{width:76px;height:106px}}
+@media(min-width:1201px){#dock{grid-template-columns:auto minmax(0,1fr) 340px}}
+
+@media(max-width:760px){#top{flex-wrap:wrap;padding:8px;gap:6px}.brand{font-size:20px}#top .spacer{min-width:0}.meta{font-size:11px}.chip{font-size:10px;padding:4px 6px}.musicbtn{margin-right:0}#app,#infobar,#mapwrap{min-width:0}#players{min-width:0;max-width:100%;overflow-x:auto}#mapbtns{max-width:calc(100vw - 16px)}#mapbtns button{padding:5px 7px}#cards .pcard{width:68px;min-width:68px;height:96px}.modal .field{gap:8px}.modal .field label{flex-basis:100%;min-width:0}.modal .avgrid{grid-template-columns:repeat(3,minmax(0,1fr))}.modal .avopt{min-width:0;max-width:none}}
+
+/* Beginner rules retain the atlas grid and palette, with wrapping labels. */
+.combined-mode #markets {display:block; flex:1; min-width:180px; font-size:13px; line-height:1.5; padding:8px 12px; max-width:none}
+.combined-mode #roundInfo {white-space:normal; line-height:1.3}
+.combined-mode .act .t, .combined-mode .act .title {white-space:normal}
+.combined-mode .mrow2 .bn {overflow-wrap:anywhere; line-height:1.15}
+.skip-link {position:fixed; left:8px; top:-50px; z-index:9999}
+.skip-link:focus {top:4px}
+@media(max-width:760px) {
+ .combined-mode #roundInfo {font-size:11px}
+ .combined-mode #eraChip {font-size:10px; padding:4px}
+ .combined-mode #hint {max-width:calc(100% - 24px); white-space:normal}
+}
+
+@media(max-width:760px){#mapbtns{bottom:auto;height:auto;max-height:42px}.combined-mode .pl .r2{flex-wrap:wrap;white-space:normal;gap:0 6px}.combined-mode .pl{min-width:128px}.combined-mode #hint{top:52px;font-size:11px}}
+
+@media(max-width:760px){.combined-mode table.score{table-layout:fixed;font-size:12px}.combined-mode table.score th,.combined-mode table.score td{padding:5px 3px;overflow-wrap:anywhere}.combined-mode table.score th:first-child{width:20px}.combined-mode table.score th:nth-child(2){width:34%}.combined-mode .score .namecell{flex-wrap:wrap;gap:3px}.combined-mode .score .namecell>span{font-size:10px!important}}
+
+.combined-mode .modal {background:#faf6eb}
