@@ -81,21 +81,23 @@ async function boot() {
 
 // ================= 存档 =================
 function saveLocal(st) {
+  const saveKey = st.mode === "combined" ? "bw_combined_save" : "bw_industrial20_save";
   try {
     if (st.save && !st.over) {
-      localStorage.setItem("bw_industrial20_save", JSON.stringify(st.save));
-      localStorage.setItem("bw_industrial20_save_meta", JSON.stringify({
+      localStorage.setItem(saveKey, JSON.stringify(st.save));
+      localStorage.setItem(saveKey + "_meta", JSON.stringify({
         t: Date.now(), round: st.round, era: st.eraZh, mode: st.mode,
         players: st.players.map(p => ({ name: p.name, vp: p.vp, me: p.isMe }))
       }));
     }
-    if (st.over) { localStorage.removeItem("bw_industrial20_save"); localStorage.removeItem("bw_industrial20_save_meta"); }
+    if (st.over) { localStorage.removeItem(saveKey); localStorage.removeItem(saveKey + "_meta"); }
   } catch (e) { /* 隐私模式等情况下存不了，不影响游戏 */ }
 }
 function localSave() {
   try {
-    const s = localStorage.getItem("bw_industrial20_save");
-    return s ? { save: JSON.parse(s), meta: JSON.parse(localStorage.getItem("bw_industrial20_save_meta") || "{}") } : null;
+    const key = localStorage.getItem("bw_combined_save") ? "bw_combined_save" : "bw_industrial20_save";
+    const s = localStorage.getItem(key);
+    return s ? { save: JSON.parse(s), meta: JSON.parse(localStorage.getItem(key + "_meta") || "{}") } : null;
   } catch (e) { return null; }
 }
 async function resumeLocal(quiet) {
@@ -181,10 +183,11 @@ function renderAll() {
 }
 
 function renderTop(st) {
+  document.body.classList.toggle("combined-mode", st.mode === "combined");
   $("#eraChip").textContent = T(st.eraZh);
   if (!$("#btnEcoRules")) { const b = document.createElement("button"); b.id="btnEcoRules"; b.textContent="Eco rules"; b.onclick=()=>modal(ECO_RULES_HTML); $("#menu").append(b); }
   $("#btnEcoRules").hidden = !st.eco;
-  $("#roundInfo").textContent = `Round ${st.round} · Deck: ${st.deck}${st.eco ? " · ECO MODE · INDUSTRIAL BELT 20" : ""}`;
+  $("#roundInfo").textContent = st.mode === "combined" ? `Round ${st.round} / 8 · ${st.over ? "Final scores" : "1 action · Income paid after round"}` : `Round ${st.round} · Deck: ${st.deck}${st.eco ? " · ECO MODE · INDUSTRIAL BELT 20" : ""}`;
   const myTurn = !st.over && st.active === me(st).id && !UI.playing;
   $("#pips").innerHTML = [...Array(st.actionsTotal || 2).keys()].map(i => `<span class="pip ${myTurn && i < st.actionsLeft ? "" : "off"}"></span>`).join("");
 }
@@ -201,7 +204,7 @@ function renderPlayers(st, bump = {}) {
       <div class="body">
       <div class="r1"><span class="nm" style="color:${PCOL[p.id]}">${englishPlayerName(p.name)}</span>
       <span class="vp ${bump[p.id] ? "bump" : ""}" title="Victory points">${p.vp}</span></div>
-      <div class="r2"><span>£<b class="money">${p.money}</b></span><span>Income <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
+      <div class="r2"><span>US$<b class="money">${p.money}</b></span><span>Income <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
       <div class="r3">${p.levelZh ? `<span class="lv">${T(p.levelZh)}</span>` : ""}<span class="home">${T(p.homeZh)}</span>${st.eco ? `<span class="eco-green">♧ ${p.greenPoints || 0} green</span>` : ""}${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="Network connected to ${pname(st, i)}"></span>`).join("")}</div>
       </div></div>`;
   }).join("");
@@ -220,16 +223,16 @@ function layoutInfobar() {
 }
 function marketRow(m, kind) {
   // 价位条：每一档一格，按存量填充；宽度随窗口伸缩（以前一块一块画方块，窗口一窄就出界）
-  const lad = m.ladder.map(l => `<i title="£${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
-  return `<div class="mrow" title="${kind === "coal" ? "Coal" : "Iron"} ${m.count}/${m.capacity} — current price £${m.price}">${cubeHTML(kind, 12)}` +
-    `<span class="mladder ${kind}">${lad}</span><b>£${m.price}</b></div>`;
+  const lad = m.ladder.map(l => `<i title="US$${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
+  return `<div class="mrow" title="${kind === "coal" ? "Coal" : "Iron"} ${m.count}/${m.capacity} — current price US$${m.price}">${cubeHTML(kind, 12)}` +
+    `<span class="mladder ${kind}">${lad}</span><b>US$${m.price}</b></div>`;
 }
 function marketCubes(m, kind) {
   // 按原作的市场板：每个价格档 per 个格子，从便宜到贵，有货的画实心方块。
   // 交通打通后几个市场合成一个，格子数翻几倍 —— 这时改画分档条，否则一行几十块方块把整条栏撑爆
   if (m.capacity > 16) {
     return `<span class="mladder ${kind}">` + m.ladder.map(l =>
-      `<i title="£${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("") +
+      `<i title="US$${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("") +
       `</span><span class="mcount">${m.count}/${m.capacity}</span>`;
   }
   let h = "";
@@ -238,14 +241,18 @@ function marketCubes(m, kind) {
   return `<span class="mcubes">${h}</span>`;
 }
 function renderMarkets(st) {
+  if (st.mode === "combined") {
+    const text = "Build: tile cost · +2 income · printed VP | Connect: US$5 · 3 VP";
+    $("#markets").textContent = text; $("#markets2").textContent = text; return;
+  }
   const mine = new Set(st.myZones || []);
   const grp = st.zoneGroup || {}, size = {};
   Object.values(grp).forEach(r => size[r] = (size[r] || 0) + 1);
   const html = Object.entries(st.markets).map(([z, m]) => {
     const merged = size[grp[z]] > 1;
     const mates = merged ? Object.keys(grp).filter(k => grp[k] === grp[z] && k !== z).map(k => ZONE_ZH[k]).join(", ") : "";
-    const tip = `${ZONE_ZH[z]} market | Coal ${m.coal.count}/${m.coal.capacity} — current price £${m.coal.price} | Iron ${m.iron.count}/${m.iron.capacity} — current price £${m.iron.price}｜` +
-      `When empty, buy coal/iron for £${m.coal.outside}/£${m.iron.outside}` + (mine.has(z) ? " | Reachable through your network" : "") +
+    const tip = `${ZONE_ZH[z]} market | Coal ${m.coal.count}/${m.coal.capacity} — current price US$${m.coal.price} | Iron ${m.iron.count}/${m.iron.capacity} — current price US$${m.iron.price}｜` +
+      `When empty, buy coal/iron for US$${m.coal.outside}/US$${m.iron.outside}` + (mine.has(z) ? " | Reachable through your network" : "") +
       (merged ? ` | Merged with ${mates}` : "");
     return `<div class="mz ${mine.has(z) ? "mine" : ""} ${merged ? "merged" : ""}" data-zone="${z}" title="${tip}">
       <div class="zn">${ZONE_ZH[z]}${mine.has(z) ? " ●" : ""}${merged ? " ⛓" : ""}</div>
@@ -317,10 +324,11 @@ function renderHand(st) {
       <div class="art" style="${artCSS(cardArt(c))}"></div><div class="nm">${T(c.label)}</div></div>`;
   }).join("");
   const usable = tg.filter((t, i) => st.hand[i].kind === "WILD" || t.size).length;
-  $("#handSub").textContent = st.hand.length ? `Usable: ${usable}/${st.hand.length}` : "";
+  $("#handSub").textContent = st.hand.length ? st.mode === "combined" ? "Industry guides · no cards required" : `Usable: ${usable}/${st.hand.length}` : "";
 }
 // 这张牌能在哪建：区域牌 = 该区域城市（仍须在网络内）；产业牌 = 网络内有空格能建这种产业的城市
 function cardTargets(card) {
+  if (V().mode === "combined") return new Set(V().actions.filter(a => a.kind === "BUILD" && a.industry === card.v).map(a => a.city));
   const st = V();
   const reach = new Set(st.reach), taken = {};
   st.placed.forEach(p => { (taken[p.city] = taken[p.city] || new Set()).add(p.slot); });
@@ -337,15 +345,19 @@ function cardTargets(card) {
 const zoneMkt = { BRITAIN: "Britain market", EUROPE: "Europe market", AMERICAS: "Americas market", ASIAPAC: "Asia-Pacific market" };
 function costParts(t, e) {
   // 「$17 板件 + 亚太市场煤×1 $6 = $23」
-  const parts = [`£${t.cost} Tiles`];
+  const parts = [`US$${t.cost} Tiles`];
   (e.coalFrom || []).forEach(s => parts.push(`${cubeHTML("coal", 11)}${s.owner === me(S).id ? "Your own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} Free`));
-  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "Market"}×${e.coalMkt} £${e.coalCash}`);
+  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "Market"}×${e.coalMkt} US$${e.coalCash}`);
   (e.ironFrom || []).forEach(s => parts.push(`${cubeHTML("iron", 11)}${s.owner === me(S).id ? "Your own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} Free`));
-  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "Market"}×${e.ironMkt} £${e.ironCash}`);
-  return parts.join(" + ") + (parts.length > 1 ? ` = £${e.money}` : "");
+  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "Market"}×${e.ironMkt} US$${e.ironCash}`);
+  return parts.join(" + ") + (parts.length > 1 ? ` = US$${e.money}` : "");
 }
 function canLoan() { return S && S.actions && S.actions.some(a => a.kind === "LOAN"); }
 function buildStatus(cityId, ind) {
+  if (S?.mode === "combined") {
+    const action = S.actions.find(a => a.kind === "BUILD" && a.city === cityId && a.industry === ind);
+    return action ? {ok:true,e:{money:action.cost}} : {ok:false,why:"No affordable tile or matching empty slot"};
+  }
   const st = S, info = (st.buildInfo || {})[ind], c = city(cityId);
   if (!info || !c) return { ok: false, why: "—" };
   if (info.reason) return { ok: false, why: T(info.reason) };
@@ -360,7 +372,7 @@ function buildStatus(cityId, ind) {
   const cash = me(st).money;
   if (!hasReg && !hasInd) return { ok: false, e, why: `Missing card: requires ${T(c.regionZh)} or ${T(B.industryZh[ind])}` };
   if (e.money > cash) return { ok: false, e, short: true,
-    why: `Insufficient funds: <b>£${e.money - cash}</b> short${canLoan() ? " (Loan available: £30)" : ""}` };
+    why: `Insufficient funds: <b>US$${e.money - cash}</b> short${canLoan() ? " (Loan available: US$30)" : ""}` };
   return { ok: true, e };
 }
 function tileLines(ind, t) {
@@ -371,7 +383,7 @@ function tileLines(ind, t) {
   const note = ["COAL", "IRON"].includes(ind) ? `Produces ${t.produces} resources when built; sells to market`
     : ind === "PROV" ? "Produces 1 beer in the Sail Era or 2 in the Steam Era"
       : t.sellProv ? `Requires ${t.sellProv} beer to sell and a connection to an open port accepting these goods` : "No beer required to sell; connect to an open port accepting these goods";
-  return `<div class="r"><span class="k">Cost</span><b style="color:var(--gold2)">£${t.cost}</b>${need.length ? " + " + need.join("") : " · No coal or iron required"}</div>
+  return `<div class="r"><span class="k">Cost</span><b style="color:var(--gold2)">US$${t.cost}</b>${need.length ? " + " + need.join("") : " · No coal or iron required"}</div>
     <div class="r"><span class="k">Rewards</span>${give.join(" · ")}</div>
     <div class="r"><span class="k">Notes</span>${note}</div>`;
 }
@@ -380,7 +392,7 @@ function cityLine(cityId, ind) {
   const detail = s.ok ? costParts((S.buildInfo[ind] || {}).tile, e)
     : s.short ? `${s.why}<br>${costParts((S.buildInfo[ind] || {}).tile, e)}` : s.why;
   return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span>
-    <span class="n">${cityZh(cityId)}${e && e.money !== null && e.money !== undefined ? ` £${e.money}` : ""}</span><span class="d">${detail}</span></div>`;
+    <span class="n">${cityZh(cityId)}${e && e.money !== null && e.money !== undefined ? ` US$${e.money}` : ""}</span><span class="d">${detail}</span></div>`;
 }
 function cardPopHTML(card) {
   const st = S;
@@ -415,12 +427,13 @@ function cardPopHTML(card) {
     h += `<div class="r" style="margin-top:6px"><b style="color:var(--txt)">${cityZh(c.id)}</b>${netSet.size && !netSet.has(c.id) ? `<span class="sl" style="margin-left:6px">Outside your network</span>` : ""}</div>`;
     h += inds.map(ind => {
       const s = buildStatus(c.id, ind);
-      return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span><span class="n">${iconHTML(ind, 12, "currentColor")}${T(B.industryZh[ind])}${s.e && s.e.money != null ? ` £${s.e.money}` : ""}</span><span class="d">${s.ok ? "" : s.why}</span></div>`;
+      return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span><span class="n">${iconHTML(ind, 12, "currentColor")}${T(B.industryZh[ind])}${s.e && s.e.money != null ? ` US$${s.e.money}` : ""}</span><span class="d">${s.ok ? "" : s.why}</span></div>`;
     }).join("");
   });
   return h + `<div class="foot">Region card: build in any eligible city in this region, including outside your network (like location cards in Brass)</div>`;
 }
 function showCardPop(ci, anchor) {
+  if (V().mode === "combined") return;
   const st = V(), card = st.hand[ci], pop = $("#cardpop");
   if (!card || !S || !S.buildInfo) { pop.classList.add("hide"); return; }
   pop.innerHTML = cardPopHTML(card);
@@ -442,7 +455,7 @@ function showCardTargets(ci) {
   map.setTargets(t.size || !rest ? [...t] : [], "tgt", rest);
   const anchor = document.querySelector(`.pcard[data-ci="${ci}"]`);
   if (S && S.buildInfo && Object.keys(S.buildInfo).length) { showCardPop(ci, anchor); hideTip(); return; }
-  const txt = card.kind === "WILD"
+  const txt = st.mode === "combined" ? `Industry guide: ${t.size} cities with an affordable build. No card required.` : card.kind === "WILD"
     ? `Wild card: ${card.v === "REGION" ? "any region" : "any industry"}; expires at era end`
     : card.kind === "REGION"
       ? `Region card: ${T(card.label)} — ${t.size} buildable cities${rest && rest.length ? ` (${rest.length} other cities are outside your network or full, marked with dashed lines)` : ""}`
@@ -486,16 +499,17 @@ function actTitle(a) {
     return `${T(B.industryZh[a.industry])} ${lv} <span class="c">·</span> ${cityZh(a.city)}`;
   }
   if (a.kind === "DEVELOP") return (a.dev || [a]).map(d => T(B.industryZh[d.industry]) + (ROMAN[d.level] || "")).join(", ");
-  if (a.kind === "LOAN") return "£30";
+  if (a.kind === "LOAN") return "US$30";
   return "Discard 3 cards to draw 2 wild cards.";
 }
 function actGain(a) {
+  if (S?.mode === "combined") return a.kind === "BUILD" ? `${a.vp} VP now · Income +US$2 per round` : "3 VP now · Fixed cost US$5";
   if (a.kind === "CLEAN_UP") return `Pollution ${a.pollutionBefore} → ${a.pollutionAfter} · 1 action + discard`;
   if (a.kind === "ECO_UPGRADE") return `Sale emissions → ${a.emissionsAfter} · +2 green points when sold`;
   if (a.kind === "BUILD") {
     const bits = [`${a.vp} VP`, `Income +${a.income}`];
     if (a.produces) bits.push(`Output ${a.produces}`);
-    if (a.pollutionFee) bits.push(`Pollution fee +£${a.pollutionFee}`);
+    if (a.pollutionFee) bits.push(`Pollution fee +US$${a.pollutionFee}`);
     if (a.linkVp) bits.push(`Links ${a.linkVp}`);
     if (a.mktSale) bits.push(mktSaleText(a.mktSale, true));
     return bits.join(" · ");
@@ -560,7 +574,7 @@ function renderActions() {
   const st = S;
   const tabs = $("#acttabs"), list = $("#actlist");
   if (!st || UI.playing) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">Other players are taking their turns…</div>`; $("#confirm").classList.add("hide"); return; }
-  if (st.over) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">The game has ended</div>`; return; }
+  if (st.over) { $("#confirm").classList.add("hide"); tabs.innerHTML = ""; list.innerHTML = `<div class="empty">The game has ended</div>`; return; }
   const myTurn = st.active === me(st).id;
   const g = groupActs();
   const nAct = st.actions.filter(a => !(a.kind === "DEVELOP" && a.dev && a.dev.length > 1)).length;
@@ -572,9 +586,9 @@ function renderActions() {
 
   const advisorMessage = best
     ? `★ Strategy Advisor
-      Current Money: £${player.money}
+      Current Money: US$${player.money}
       Recommended Action: ${best.kind}
-      Action Cost: £${best.cost ?? 0}
+      Action Cost: US$${best.cost ?? 0}
 
       ${explainMove(best)}`
     : "";
@@ -591,7 +605,7 @@ function renderActions() {
     return `<button type="button" data-k="${k}" class="${k === UI.tab ? "on" : ""}" aria-pressed="${k === UI.tab}">${KIND_ZH[k]}${best && best.kind === k ? "★" : ""}<span class="n">${n}</span></button>`;
   }).join("") +
     (fk ? `<button class="filter" id="clearFilter">Filter: ${fk.city ? cityZh(fk.city) : fk.link.split("|").map(cityZh).join("—")} ✕</button>` : "") +
-    `<button class="${st.actions.length ? "" : "primary "}passbtn" id="passbtn" title="Pass this action and discard one card">Pass</button>`;
+    `<button class="${st.actions.length ? "" : "primary "}passbtn" id="passbtn" title="${st.mode === "combined" ? "Save money and collect round income" : "Pass this action and discard one card"}">${st.mode === "combined" ? "Save money" : "Pass"}</button>`;
   if (UI.tab === "DEVELOP" && !UI.filter) { list.innerHTML = devPickerHTML(g.DEVELOP, best); renderConfirm(); return; }
   let items = filtered(g[UI.tab] || []);
   if (UI.tab === "BUILD") items.sort((a, b) => IND_ORDER.indexOf(a.industry) - IND_ORDER.indexOf(b.industry) || a.cost - b.cost);
@@ -604,7 +618,7 @@ function renderActions() {
       <span class="body"><span class="tx">${actTitle(a)}</span>
         <span class="gain">${actGain(a)}</span>
         ${srcHTML(a) ? `<span class="src">${srcHTML(a)}</span>` : ""}</span>
-      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "£" + a.cost : "Free"}</span></button>`).join("")
+      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "US$" + a.cost : "Free"}</span></button>`).join("")
     : `<div class="empty">${UI.filter ? "No matching actions here" : "No actions available"}</div>`;
   if (advisorMessage) {
     list.insertAdjacentHTML(
@@ -715,7 +729,7 @@ function pickBeer(k) {
   renderConfirm(); previewSel();
 }
 function mktSaleText(m, short) {
-  if (m.n) return short ? `Sells ${m.n} to market for £${m.money}` : `Sells ${m.n} resources to market when built, earning £${m.money}`;
+  if (m.n) return short ? `Sells ${m.n} to market for US$${m.money}` : `Sells ${m.n} resources to market when built, earning US$${m.money}`;
   if (m.why === "nohub") return short ? "No open port connection; no market sale" : "No connection to an open trade port: coal stays on the tile. Market sales happen only when built; connecting later does not trigger a sale.";
   return short ? "Market full" : "Market full: output stays on the tile";
 }
@@ -751,6 +765,7 @@ function devBonusHTML(a) {
 function selAction() { return S && UI.sel !== null ? S.actions.find(a => a.i === UI.sel) : null; }
 // ---------- 弃牌（伯明翰规则：每个动作弃 1 张，由玩家选；建造须弃对应的牌；侦查弃 3 张） ----------
 function discardSpec() {
+  if (S?.mode === "combined") return null;
   const a = selAction();
   if (a && a.discard) return a.discard;
   if (UI.passMode && S) return { n: 1, allowed: S.hand.map((_, i) => i), default: S.passDiscard || [0] };
@@ -782,15 +797,15 @@ function go() {
 function renderConfirm() {
   const a = selAction(), box = $("#confirm");
   if (UI.passMode && S) {
-    box.innerHTML = `<div class="ct"><div class="t1">Pass</div><div class="t2">Take no action; discard 1 card</div>${discardHTML()}</div>
+    box.innerHTML = `<div class="ct"><div class="t1">Pass</div><div class="t2">${S.mode === "combined" ? "Save money; income is paid after this round" : "Take no action; discard 1 card"}</div>${discardHTML()}</div>
       <button id="btnCancel">Cancel</button><button class="primary" id="btnGo">Confirm ⏎</button>`;
     box.classList.remove("hide"); return;
   }
   if (!a) { box.classList.add("hide"); return; }
-  const cost = a.cost ? `£${a.cost}` : "Free";
+  const cost = a.cost ? `US$${a.cost}` : "Free";
   const detail = [];
-  if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`Tiles £${a.base}`);
-  if (a.mktCash && a.kind !== "DEVELOP") detail.push(`Resources £${a.mktCash}`);
+  if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`Tiles US$${a.base}`);
+  if (a.mktCash && a.kind !== "DEVELOP") detail.push(`Resources US$${a.mktCash}`);
   box.innerHTML = `<div class="ct"><div class="t1">${KIND_ZH[a.kind]}: ${actTitle(a)}</div>
       <div class="t2"><b style="color:var(--gold2)">${cost}</b>${detail.length ? ` (${detail.join(" + ")})` : ""} · ${actGain(viewAction(a))} ${srcHTML(a) ? " · " + srcHTML(a) : ""}</div>
       ${a.mktSale ? `<div class="t2 msale">${mktSaleText(a.mktSale, false)}</div>` : ""}
@@ -835,6 +850,7 @@ function nextTile(p, ind) {
   return lv ? B.tiles[ind].find(t => t.level === lv) : null;
 }
 function needHTML(t) {
+  if (V()?.mode === "combined") return "No resources";
   const n = [];
   for (let i = 0; i < t.coal; i++) n.push(cubeHTML("coal", 11));
   for (let i = 0; i < t.iron; i++) n.push(cubeHTML("iron", 11));
@@ -847,15 +863,16 @@ function renderMat(st) {
     const t = nextTile(p, ind);
     const left = Object.values(p.supply[ind] || {}).reduce((a, b) => a + b, 0);
     if (!t) return `<div class="mrow2 off"><span class="bi" style="${artCSS(IND_ART[ind])}"></span><span class="bn">${T(B.industryZh[ind])}</span><span></span><span></span><span class="need">Depleted</span><span></span><span></span></div>`;
-    const ok = t.era === "BOTH" || t.era === st.era;
-    return `<div class="mrow2 ${ok ? "" : "off"}" title="${T(B.industryZh[ind])} ${ROMAN[t.level]}: Cost £${t.cost} · ${t.vp} VP · Income +${t.income} · Links ${t.linkVp}${t.noDev ? " · Cannot be developed" : ""}${ok ? "" : ` (Unavailable in the ${T(st.eraZh)}; develop first)`}">
+    const ok = st.mode === "combined" || t.era === "BOTH" || t.era === st.era;
+    return `<div class="mrow2 ${ok ? "" : "off"}" title="${T(B.industryZh[ind])} ${ROMAN[t.level]}: Cost US$${t.cost} · ${t.vp} VP · Income +${st.mode === "combined" ? 2 : t.income} · Links ${st.mode === "combined" ? 0 : t.linkVp}${t.noDev ? " · Cannot be developed" : ""}${ok ? "" : ` (Unavailable in the ${T(st.eraZh)}; develop first)`}">
       <span class="bi" style="${artCSS(IND_ART[ind])}"></span><span class="bn">${T(B.industryZh[ind])}</span>
-      <span class="lv${t.noDev ? " nd" : ""}">${ROMAN[t.level]}</span><span class="cost">£${t.cost}</span>
+      <span class="lv${t.noDev ? " nd" : ""}">${ROMAN[t.level]}</span><span class="cost">US$${t.cost}</span>
       <span class="need">${needHTML(t)}${ok ? "" : ` <span class="warn">Development required</span>`}</span>
-      <span class="give">${t.vp} VP +${t.income}</span><span class="left">×${left}</span></div>`;
+      <span class="give">${t.vp} VP +${st.mode === "combined" ? 2 : t.income}</span><span class="left">×${left}</span></div>`;
   }).join("");
 }
 function showMatModal(pid) {
+  if (V().mode === "combined") { const d=modal(`<button class="x">✕</button><h2>Industry board</h2><p>All levels available in order. Build for printed VP and +US$2 income. No resources required.</p><div class="matgrid">${IND_ORDER.map(ind=>`<div class="mcol"><h4>${T(B.industryZh[ind])}</h4>${B.tiles[ind].map(t=>`<div class="tcard"><span class="bi" style="${artCSS(IND_ART[ind])}"></span>${ROMAN[t.level]} · US$${t.cost} · ${t.vp} VP · Income +US$2</div>`).join("")}</div>`).join("")}</div>`); d.querySelector(".x").onclick=()=>d.remove(); return; }
   const st = V();
   let cur = pid === undefined ? me(st).id : pid;
   const d = document.createElement("div"); d.className = "overlay";
@@ -869,9 +886,9 @@ function showMatModal(pid) {
         return `<div class="mcol"><h4><span class="bi" style="${artCSS(IND_ART[ind])}"></span>${T(B.industryZh[ind])}</h4>` +
           B.tiles[ind].map(t => {
             const left = sup[t.level] || 0;
-            const era = t.era === "E1" ? "Sail" : t.era === "E2" ? "Steam" : "";
+            const era = st.mode === "combined" ? "" : t.era === "E1" ? "Sail" : t.era === "E2" ? "Steam" : "";
             return `<div class="tcard ${nt && nt.level === t.level ? "next" : ""} ${left ? "" : "gone"}">
-              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}<span class="c">£${t.cost}</span></div>${t.noDev ? `<div class="nodev-note" title="Must build this tile to unlock the next level">Cannot be developed</div>` : ""}
+              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}<span class="c">US$${t.cost}</span></div>${t.noDev ? `<div class="nodev-note" title="Must build this tile to unlock the next level">Cannot be developed</div>` : ""}
               <div class="r">${needHTML(t)}</div>
               <div class="r"><span><b>${t.vp}</b>VP</span><span>· Income<b>+${t.income}</b></span><span>· Links<b>${t.linkVp}</b></span>${ind === "PROV" ? `<span title="Output when built in the Sail Era 1 beer, Output when built in the Steam Era 2 beer">· Beer output<b>1</b>/<b>2</b></span>` : t.produces ? `<span>· Output: ${ind === "COAL" ? "Coal" : "Iron"}<b>${t.produces}</b></span>` : ""}</div>
               <span class="cnt">×${left}/${t.copies}</span></div>`;
@@ -895,7 +912,7 @@ function logHTML(st) {
     // 每一轮（包括第 1 轮）都有标题；开局的本土分配不算在任何一轮里
     const rk = l.who === "setup" || /^(★|最终排名)/.test(l.text) ? null : `${l.era}-${l.round}`;
     if (l.round !== undefined && rk !== null && rk !== lastRound)
-      sep = `<div class="le round">${l.era === "E2" ? "Steam Era" : "Sail Era"}, Round ${l.round}</div>`;
+      sep = `<div class="le round">${st.mode === "combined" ? "Combined Era" : l.era === "E2" ? "Steam Era" : "Sail Era"}, Round ${l.round}</div>`;
     if (rk !== null) lastRound = rk;
     return sep + `<div class="le ${l.who === "system" || l.who === "setup" ? "sys" : ""} ${l._new ? "new" : ""} ${l.at ? "loc" : ""}"` +
       (l.at ? ` data-at="${l.at.join(",")}" title="Click to locate"` : "") + `>` +
@@ -910,6 +927,7 @@ function renderLog(st) {
 
 // ---------- 提示 ----------
 function renderHint() {
+  if (S?.mode === "combined") { const el=$("#hint"); el.textContent=S.over ? "Eight rounds complete" : "Build for VP and income, connect for 3 VP, or save money."; el.classList.remove("hide", "hint-port"); return; }
   const st = S; const el = $("#hint");
   let h = "";
   if (st && st.started && !st.over && !UI.playing) {
@@ -942,7 +960,7 @@ function cityTip(id) {
   const st = V(), c = city(id); if (!c) return;
   const tiles = st.placed.filter(p => p.city === id);
   let h = `<b>${T(c.zh)}</b> <span class="sl">${c.en} · ${T(c.regionZh)}${c.port ? " · Port" : ""}</span>`;
-  if (st.eco) { const pollution = st.eco.pollution[id] || 0; h += `<div class="eco-tip">Pollution ${pollution}/10 · ${pollution >= 6 ? "Build fee +£5" : "No pollution fee"}</div>`; }
+  if (st.eco) { const pollution = st.eco.pollution[id] || 0; h += `<div class="eco-tip">Pollution ${pollution}/10 · ${pollution >= 6 ? "Build fee +US$5" : "No pollution fee"}</div>`; }
   h += c.slots.map((s, i) => {
     const t = tiles.find(p => p.slot === i);
     if (t) {
@@ -959,7 +977,7 @@ function cityTip(id) {
     const inds = [...new Set(c.slots.filter((s, i) => !taken.has(i)).flat())];
     if (inds.length) h += `<div class="sl" style="margin-top:5px;color:var(--gold)">Buildable: </div>` + inds.map(ind => {
       const bs = buildStatus(id, ind);
-      return `<div class="tipst ${bs.ok ? "ok" : "no"}">${bs.ok ? "✓" : "✗"} ${T(B.industryZh[ind])}${bs.e && bs.e.money != null ? ` £${bs.e.money}` : ""}${bs.ok ? "" : ": " + bs.why}</div>`;
+      return `<div class="tipst ${bs.ok ? "ok" : "no"}">${bs.ok ? "✓" : "✗"} ${T(B.industryZh[ind])}${bs.e && bs.e.money != null ? ` US$${bs.e.money}` : ""}${bs.ok ? "" : ": " + bs.why}</div>`;
     }).join("");
   }
   const hub = (st.hubs || []).find(x => x.city === id && x.active);
@@ -977,17 +995,18 @@ function cityTip(id) {
 function linkTip(key) {
   const [a, b] = key.split("|"), l = B.links.find(x => [x.a, x.b].sort().join("|") === key); if (!l) return;
   const st = V(), bl = (st.builtLinks || []).find(x => [x.a, x.b].sort().join("|") === key);
-  const era = l.era === "E1" ? "Sail Era only" : l.era === "E2" ? "Steam Era only" : "Two eras";
-  const cost = B.linkCost[`${st.era}_${l.sea ? "sea" : "land"}`];
+  const era = st.mode === "combined" ? "Combined Era" : l.era === "E1" ? "Sail Era only" : l.era === "E2" ? "Steam Era only" : "Two eras";
+  const cost = st.mode === "combined" ? {money:5} : B.linkCost[`${st.era}_${l.sea ? "sea" : "land"}`];
   let h = `<b>${cityZh(a)} — ${cityZh(b)}</b> <span class="sl">${l.sea ? "Shipping" : "Land route"} · ${era}</span>`;
   if (bl) h += `<div class="row" style="color:${PCOL[bl.owner]}">Built by ${pname(st, bl.owner)}</div>`;
-  else if (cost && (l.era === "BOTH" || l.era === st.era)) h += `<div class="sl">Construction cost: £${cost.money}${cost.coal ? ` + ${cubeHTML("coal", 11)}` : ""}${cost.prov ? ` + ${cubeHTML("prov", 11)}` : ""}</div>`;
+  else if (cost && (st.mode === "combined" || l.era === "BOTH" || l.era === st.era)) h += `<div class="sl">Construction cost: US$${cost.money}${cost.coal ? ` + ${cubeHTML("coal", 11)}` : ""}${cost.prov ? ` + ${cubeHTML("prov", 11)}` : ""}</div>`;
   else h += `<div class="sl">Unavailable in the ${T(st.eraZh)}</div>`;
   showTip(h);
 }
 
 // ---------- 地图交互 ----------
 function onMapHover(hit) {
+  if (!V()) return;
   if (UI.card !== null) return;
   if (!hit) { if (UI.sel === null) hideTip(); return; }
   if (hit.city) cityTip(hit.city); else if (hit.link) linkTip(hit.link);
@@ -1157,7 +1176,7 @@ async function playOne(ev, final) {
     D.turnOrder = ev.order; D.round = (ev.round || D.round) + 1;
     renderPlayers(D); renderTop(D);
     Object.entries(ev.income || {}).forEach(([pid, v]) => {
-      if (v) floatText(screenOfPlayer(+pid, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), v > 0 ? "#b9e3a7" : "#f09a8a");
+      if (v) floatText(screenOfPlayer(+pid, ".money"), (v > 0 ? "+US$" : "−US$") + Math.abs(v), v > 0 ? "#b9e3a7" : "#f09a8a");
     });
     D.log.push({ who: "system", text: `Round ${ev.round} ends: income paid; lower spending acts earlier next round`, _new: 1 }); renderLog(D);
     D._strip = ev.order;              // 等下一位玩家开始时再显示顺位条（时代交替的画面要先播完）
@@ -1228,7 +1247,7 @@ async function playOne(ev, final) {
   if (ev.kind === "NETWORK") [ev.link, ev.second].filter(Boolean).forEach(l => map.flashLink([...l].sort().join("|"), col));
   // 数字飘字：钱、收入、分
   const dm = (ev.dmoney || {})[pid];
-  if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+£" : "−£") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
+  if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+US$" : "−US$") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
   const di = (ev.dincome || {})[pid];
   if (di) setTimeout(() => floatText(screenOfPlayer(pid, ".r2"), `Income ${di > 0 ? "+" : ""}${di}`, di > 0 ? "#b9e3a7" : "#f09a8a"), DUR(260));
   if (ev.kind === "SELL") floatText(tgt, "Sold！", "#ffe39a");
@@ -1239,7 +1258,7 @@ async function playOne(ev, final) {
     for (let j = 0; j < sold; j++) flyCube(ev.industry === "COAL" ? "coal" : "iron", tgt, screenOfMarket(zone), 200 + j * 90, 480);
   }
   Object.entries(ev.dmoney || {}).forEach(([op, v]) => {       // 被取用资源的对手也有反应
-    if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), "#b9e3a7");
+    if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+US$" : "−US$") + Math.abs(v), "#b9e3a7");
   });
   (ev.notes || []).forEach(n => { if (!n.startsWith("取用")) toast(n); });
   if (!isMe && SET.step && !UI.skip && !document.hidden) {
@@ -1458,15 +1477,15 @@ function bindSeg(root, onChange) {
 }
 function showNewGame() {
   const ls = localSave();
-  const o = Object.assign({ mode: "eco" }, SET);
+  const o = Object.assign({}, SET, { mode: "combined" });
   const resume = ls ? `<div class="resume"><div class="t">Previous game: <b>${T(ls.meta.era || "")}, Round ${ls.meta.round || "?"}</b><br>
       ${(ls.meta.players || []).map(p => `${T(p.name)} ${p.vp} VP`).join(" · ")}<br><span style="color:var(--dim);font-size:11.5px">${new Date(ls.meta.t || Date.now()).toLocaleString("en-US")}</span></div>
       <button class="primary" id="ngResume">Resume game</button></div>` : "";
   const d = modal(`<h2>Brassworld — An Industrial Atlas</h2>
     <div class="sub">A world-spanning Brass variant · 80 cities · 21 regions · You and three AI rivals</div>
     ${resume}
-    <div class="field"><label>Game mode</label>${seg("mode", [["normal", "Classic (original server)"], ["eco", "Eco (local world engine)"]], o.mode)}</div>
-    <div class="eco-start-note">Eco uses this full world map with a newly implemented rules engine and heuristic AI. Classic keeps the original online engine. Eco saves start separately.</div>
+    <div class="field"><label>Game mode</label>${seg("mode", [["combined", "Combined Era · Beginner"], ["normal", "Classic (original server)"], ["eco", "Eco (local world engine)"]], o.mode)}</div>
+    <div class="eco-start-note">Combined Era: 8 rounds, one action each round, automatic income. Build for VP or connect for US$5 and 3 VP. All cities and industry levels are available. Classic and Eco saves keep their own rules.</div>
     <div class="field"><label>AI difficulty</label>${seg("level", [["easy", "Novice"], ["normal", "Experienced"], ["hard", "Expert"]], o.level)}
       <div class="seg"><span class="hint" id="lvHint"></span></div></div>
     <div class="field"><label>Suggested moves</label>${seg("hints", [["0", "Off"], ["1", "On"]], o.hints ? "1" : "0")}</div>
@@ -1476,7 +1495,7 @@ function showNewGame() {
   if (!(S && S.started)) d.dataset.sticky = "1";
   const LVH = { easy: "Heuristic evaluation with more varied play", normal: "Value network, with occasional suboptimal choices", hard: "Value network with full-turn lookahead",
     master: "Value network with sampled search; strongest, but slower." };
-  const sync = () => { d.querySelector("#lvHint").textContent = o.mode === "eco" ? "Eco AI: heuristic decisions; no original neural-network AI." : LVH[o.level]; };
+  const sync = () => { d.querySelector("#lvHint").textContent = o.mode === "combined" ? "Beginner AI: casual moves with no lookahead, at every difficulty setting." : o.mode === "eco" ? "Eco AI: heuristic decisions; no original neural-network AI." : LVH[o.level]; };
   bindSeg(d, (k, v) => { o[k] = k === "hints" ? v === "1" : v; sync(); });
   d.querySelectorAll(".avopt").forEach(a => a.onclick = () => { o.avatar = a.dataset.av; d.querySelectorAll(".avopt").forEach(x => x.classList.toggle("on", x === a)); });
   sync();
@@ -1501,8 +1520,10 @@ function showNewGame() {
 const STEPS = () => rules;
 // ---------- 玩法：先问会不会玩伯明翰，再讲规则或差异，最后逐一指认界面 ----------
 const KEYS_LINE = `<div class="sub" style="margin:12px 0 0">Keyboard: Enter — confirm · Esc — cancel · AI turns: Space / Enter — next, Esc — skip replay · F — world · H — home · I — my industries · M — music</div>`;
-const ECO_RULES_HTML = `<section class="eco-help"><h3>Eco Mode · Environmental rules</h3><ul><li>On Sell: cotton +1, manufacturing +2, pottery +3 city pollution (cap 10).</li><li>At pollution 6–10, every player's new Build costs an extra £5.</li><li>Clean Up: £5 + one action + one discard; reduce pollution by 3 in a city with your factory.</li><li>Eco Upgrade: £8 + one action + one discard; upgrade your unsold sales factory once. Its sale emits 2 less pollution, minimum zero.</li><li>Sell an upgraded factory: gain 2 green points, once. Each converts to 1 VP only at final scoring.</li><li>Pollution persists across eras. Coal, iron and breweries do not emit in this version.</li></ul><p>Eco runs a newly implemented world engine and heuristic AI. Classic retains the original online engine. See ECO_README_CN.md for compatibility limits.</p></section>`;
+const ECO_RULES_HTML = `<section class="eco-help"><h3>Eco Mode · Environmental rules</h3><ul><li>On Sell: cotton +1, manufacturing +2, pottery +3 city pollution (cap 10).</li><li>At pollution 6–10, every player's new Build costs an extra US$5.</li><li>Clean Up: US$5 + one action + one discard; reduce pollution by 3 in a city with your factory.</li><li>Eco Upgrade: US$8 + one action + one discard; upgrade your unsold sales factory once. Its sale emits 2 less pollution, minimum zero.</li><li>Sell an upgraded factory: gain 2 green points, once. Each converts to 1 VP only at final scoring.</li><li>Pollution persists across eras. Coal, iron and breweries do not emit in this version.</li></ul><p>Eco runs a newly implemented world engine and heuristic AI. Classic retains the original online engine. See ECO_README_CN.md for compatibility limits.</p></section>`;
+const COMBINED_HELP = `<button class="x">✕</button><h2>Combined Era · How to play</h2><p>Play eight rounds. Each round, choose one action, then the three beginner rivals act. Everyone receives their income automatically, including after round eight.</p><p><b>Build:</b> choose any city with a matching empty slot and pay the printed tile cost. Gain its printed VP immediately and +US$2 income per round. Use tiles in level order; all levels from both eras are available. No coal, iron, beer or cards are required.</p><p><b>Connect:</b> extend from your home region, an owned industry or an owned route. Every land or sea route costs US$5 and scores 3 VP immediately. Routes and industries stay for the entire game.</p><p><b>Save money:</b> pass for free. You begin with US$30 and US$5 income. The industry cards are guides, not consumable cards. After round eight, the most VP wins; ties use income, then cash. No extra endgame bonuses.</p>`;
 function showHelp() {
+  if (S?.mode === "combined") { const d=modal(COMBINED_HELP); d.querySelector(".x").onclick=()=>d.remove(); return; }
   const d = modal(`<button class="x">✕</button><h2>How to play</h2>
     <div class="sub">Have you played Brass: Birmingham before?</div>
     <div class="choose">
@@ -1648,7 +1669,7 @@ function showSettings() {
 }
 function showFinal() {
   const st = S, rank = [...st.players].sort((a, b) => b.vp - a.vp || b.income - a.income || b.money - a.money);   // 同分比收入，再比现金
-  const cols = [...(st.eco ? [["green", "Green"]] : []), ["tiles", "Tiles"], ["links", "Links"], ["contested", "Shared cities"], ["hub", "Trade port"], ["debt", "Debt"]];
+  const cols = st.mode === "combined" ? [["tiles", "Buildings"], ["links", "Routes"]] : [...(st.eco ? [["green", "Green"]] : []), ["tiles", "Tiles"], ["links", "Links"], ["contested", "Shared cities"], ["hub", "Trade port"], ["debt", "Debt"]];
   const bk = st.vpBreak || {};
   const mine = rank.findIndex(p => p.isMe) + 1;
   const d = modal(`<h2>The final ledger</h2><div class="sub">${mine === 1 ? "You win. " : `You placed ${mine}. `}Victory points by source</div>

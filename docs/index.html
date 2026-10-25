@@ -9,10 +9,12 @@
 <title>Brassworld — An Industrial Atlas</title>
 
 <link rel="stylesheet" href="/css/app.css">
-<link rel="stylesheet" href="/theme/atlas.css">
+<link rel="stylesheet" href="/theme/atlas.css?v=accessibility-hint-1">
 <script type="module" src="/theme/english.js?v=english-ui-20261024"></script>
+<link rel="stylesheet" href="/theme/eco.css?v=industrial-belt-20">
 </head>
 <body>
+<a class="skip-link" href="#mapwrap">Skip to the map and game controls</a>
 <svg width="0" height="0" style="position:absolute"><defs id="symbols"></defs></svg>
 <div id="app">
   <header id="top">
@@ -21,6 +23,7 @@
     <span class="meta" id="roundInfo"></span>
     <span class="pips" id="pips" title="Actions remaining this turn"></span>
     <span class="spacer"></span>
+    <button id="btnMusic" class="musicbtn" title="Background music (M)" aria-label="Background music">♪</button>
     <nav id="menu">
       <button id="btnNew" class="primary">New game</button>
       <button id="btnHelp">How to play</button>
@@ -34,10 +37,20 @@
     <div id="markets" class="markets"></div>
   </section>
 
-  <main id="mapwrap">
+  <main id="mapwrap" tabindex="-1" aria-label="Game map and controls">
     <svg id="map" aria-label="World map"></svg>
+    <details id="cityNavigator">
+      <summary>City and connection navigator</summary>
+      <button id="btnCitiesClose" class="city-nav-close" type="button">Close</button>
+      <p class="city-help">Select a city to inspect it or filter available actions. Press Escape once or use Close to return to the map.</p>
+      <h2 class="city-section-title">Cities</h2>
+      <div id="cityList" role="group" aria-label="Cities"></div>
+      <h2 class="city-section-title">Available links</h2>
+      <div id="linkList" role="group" aria-label="Available links"></div>
+    </details>
     <div id="hint" class="hide"></div>
     <div id="mapbtns">
+      <button id="btnCities" type="button" aria-controls="cityNavigator" aria-expanded="false">Cities</button>
       <button id="btnWorld" title="World view (F)">World</button>
       <button id="btnHome" title="Go to home region (H)">Home</button>
       <button id="btnNet" title="Show your network and buildable cities">Network</button>
@@ -81,6 +94,6 @@
 <div id="cardpop" class="hide"></div>
 <div id="fx"></div>
 <div id="toasts"></div>
-<script type="module" src="/js/app.js"></script>
+<script type="module" src="/js/app.js?v=industrial-belt-20-fix-2"></script>
 </body>
 </html>
