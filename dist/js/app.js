@@ -181,7 +181,7 @@ function renderPlayers(st, bump = {}) {
       <div class="body">
       <div class="r1"><span class="nm" style="color:${PCOL[p.id]}">${englishPlayerName(p.name)}</span>
       <span class="vp ${bump[p.id] ? "bump" : ""}" title="Victory points">${p.vp}</span></div>
-      <div class="r2"><span>$<b class="money">${p.money}</b></span><span>Income <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
+      <div class="r2"><span>£<b class="money">${p.money}</b></span><span>Income <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
       <div class="r3">${p.levelZh ? `<span class="lv">${T(p.levelZh)}</span>` : ""}<span class="home">${T(p.homeZh)}</span>${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="Network connected to ${pname(st, i)}"></span>`).join("")}</div>
       </div></div>`;
   }).join("");
@@ -200,16 +200,16 @@ function layoutInfobar() {
 }
 function marketRow(m, kind) {
   // 价位条：每一档一格，按存量填充；宽度随窗口伸缩（以前一块一块画方块，窗口一窄就出界）
-  const lad = m.ladder.map(l => `<i title="$${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
-  return `<div class="mrow" title="${kind === "coal" ? "Coal" : "Iron"} ${m.count}/${m.capacity} — current price $${m.price}">${cubeHTML(kind, 12)}` +
-    `<span class="mladder ${kind}">${lad}</span><b>$${m.price}</b></div>`;
+  const lad = m.ladder.map(l => `<i title="£${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("");
+  return `<div class="mrow" title="${kind === "coal" ? "Coal" : "Iron"} ${m.count}/${m.capacity} — current price £${m.price}">${cubeHTML(kind, 12)}` +
+    `<span class="mladder ${kind}">${lad}</span><b>£${m.price}</b></div>`;
 }
 function marketCubes(m, kind) {
   // 按原作的市场板：每个价格档 per 个格子，从便宜到贵，有货的画实心方块。
   // 交通打通后几个市场合成一个，格子数翻几倍 —— 这时改画分档条，否则一行几十块方块把整条栏撑爆
   if (m.capacity > 16) {
     return `<span class="mladder ${kind}">` + m.ladder.map(l =>
-      `<i title="$${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("") +
+      `<i title="£${l.price}: ${l.n}/${l.per}"><b style="height:${Math.round(100 * l.n / l.per)}%"></b></i>`).join("") +
       `</span><span class="mcount">${m.count}/${m.capacity}</span>`;
   }
   let h = "";
@@ -224,8 +224,8 @@ function renderMarkets(st) {
   const html = Object.entries(st.markets).map(([z, m]) => {
     const merged = size[grp[z]] > 1;
     const mates = merged ? Object.keys(grp).filter(k => grp[k] === grp[z] && k !== z).map(k => ZONE_ZH[k]).join(", ") : "";
-    const tip = `${ZONE_ZH[z]} market | Coal ${m.coal.count}/${m.coal.capacity} — current price $${m.coal.price} | Iron ${m.iron.count}/${m.iron.capacity} — current price $${m.iron.price}｜` +
-      `When empty, buy coal/iron for $${m.coal.outside}/$${m.iron.outside}` + (mine.has(z) ? " | Reachable through your network" : "") +
+    const tip = `${ZONE_ZH[z]} market | Coal ${m.coal.count}/${m.coal.capacity} — current price £${m.coal.price} | Iron ${m.iron.count}/${m.iron.capacity} — current price £${m.iron.price}｜` +
+      `When empty, buy coal/iron for £${m.coal.outside}/£${m.iron.outside}` + (mine.has(z) ? " | Reachable through your network" : "") +
       (merged ? ` | Merged with ${mates}` : "");
     return `<div class="mz ${mine.has(z) ? "mine" : ""} ${merged ? "merged" : ""}" data-zone="${z}" title="${tip}">
       <div class="zn">${ZONE_ZH[z]}${mine.has(z) ? " ●" : ""}${merged ? " ⛓" : ""}</div>
@@ -317,12 +317,12 @@ function cardTargets(card) {
 const zoneMkt = { BRITAIN: "Britain market", EUROPE: "Europe market", AMERICAS: "Americas market", ASIAPAC: "Asia-Pacific market" };
 function costParts(t, e) {
   // 「$17 板件 + 亚太市场煤×1 $6 = $23」
-  const parts = [`$${t.cost} Tiles`];
+  const parts = [`£${t.cost} Tiles`];
   (e.coalFrom || []).forEach(s => parts.push(`${cubeHTML("coal", 11)}${s.owner === me(S).id ? "Your own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} Free`));
-  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "Market"}×${e.coalMkt} $${e.coalCash}`);
+  if (e.coalMkt) parts.push(`${cubeHTML("coal", 11)}${zoneMkt[e.zone] || "Market"}×${e.coalMkt} £${e.coalCash}`);
   (e.ironFrom || []).forEach(s => parts.push(`${cubeHTML("iron", 11)}${s.owner === me(S).id ? "Your own" : pname(S, s.owner)}·${cityZh(s.city)}×${s.n} Free`));
-  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "Market"}×${e.ironMkt} $${e.ironCash}`);
-  return parts.join(" + ") + (parts.length > 1 ? ` = $${e.money}` : "");
+  if (e.ironMkt) parts.push(`${cubeHTML("iron", 11)}${zoneMkt[e.zone] || "Market"}×${e.ironMkt} £${e.ironCash}`);
+  return parts.join(" + ") + (parts.length > 1 ? ` = £${e.money}` : "");
 }
 function canLoan() { return S && S.actions && S.actions.some(a => a.kind === "LOAN"); }
 function buildStatus(cityId, ind) {
@@ -340,18 +340,18 @@ function buildStatus(cityId, ind) {
   const cash = me(st).money;
   if (!hasReg && !hasInd) return { ok: false, e, why: `Missing card: requires ${T(c.regionZh)} or ${T(B.industryZh[ind])}` };
   if (e.money > cash) return { ok: false, e, short: true,
-    why: `Insufficient funds: <b>$${e.money - cash}</b> short${canLoan() ? " (Loan available: $30)" : ""}` };
+    why: `Insufficient funds: <b>£${e.money - cash}</b> short${canLoan() ? " (Loan available: £30)" : ""}` };
   return { ok: true, e };
 }
 function tileLines(ind, t) {
   const need = [];
   for (let i = 0; i < t.coal; i++) need.push(cubeHTML("coal", 12));
   for (let i = 0; i < t.iron; i++) need.push(cubeHTML("iron", 12));
-  const give = [`<b>${t.vp}</b> VP`, `Income +${t.income}`, `Links ${t.linkVp}`];
+  const give = [`<b>${t.vp}</b> VP`, `Income +£{t.income}`, `Links ${t.linkVp}`];
   const note = ["COAL", "IRON"].includes(ind) ? `Produces ${t.produces} resources when built; sells to market`
     : ind === "PROV" ? "Produces 1 beer in the Sail Era or 2 in the Steam Era"
       : t.sellProv ? `Requires ${t.sellProv} beer to sell and a connection to an open port accepting these goods` : "No beer required to sell; connect to an open port accepting these goods";
-  return `<div class="r"><span class="k">Cost</span><b style="color:var(--gold2)">$${t.cost}</b>${need.length ? " + " + need.join("") : " · No coal or iron required"}</div>
+  return `<div class="r"><span class="k">Cost</span><b style="color:var(--gold2)">£${t.cost}</b>${need.length ? " + " + need.join("") : " · No coal or iron required"}</div>
     <div class="r"><span class="k">Rewards</span>${give.join(" · ")}</div>
     <div class="r"><span class="k">Notes</span>${note}</div>`;
 }
@@ -360,7 +360,7 @@ function cityLine(cityId, ind) {
   const detail = s.ok ? costParts((S.buildInfo[ind] || {}).tile, e)
     : s.short ? `${s.why}<br>${costParts((S.buildInfo[ind] || {}).tile, e)}` : s.why;
   return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span>
-    <span class="n">${cityZh(cityId)}${e && e.money !== null && e.money !== undefined ? ` $${e.money}` : ""}</span><span class="d">${detail}</span></div>`;
+    <span class="n">${cityZh(cityId)}${e && e.money !== null && e.money !== undefined ? ` £${e.money}` : ""}</span><span class="d">${detail}</span></div>`;
 }
 function cardPopHTML(card) {
   const st = S;
@@ -395,7 +395,7 @@ function cardPopHTML(card) {
     h += `<div class="r" style="margin-top:6px"><b style="color:var(--txt)">${cityZh(c.id)}</b>${netSet.size && !netSet.has(c.id) ? `<span class="sl" style="margin-left:6px">Outside your network</span>` : ""}</div>`;
     h += inds.map(ind => {
       const s = buildStatus(c.id, ind);
-      return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span><span class="n">${iconHTML(ind, 12, "currentColor")}${T(B.industryZh[ind])}${s.e && s.e.money != null ? ` $${s.e.money}` : ""}</span><span class="d">${s.ok ? "" : s.why}</span></div>`;
+      return `<div class="c ${s.ok ? "ok" : "no"}"><span class="m">${s.ok ? "✓" : "✗"}</span><span class="n">${iconHTML(ind, 12, "currentColor")}${T(B.industryZh[ind])}${s.e && s.e.money != null ? ` £${s.e.money}` : ""}</span><span class="d">${s.ok ? "" : s.why}</span></div>`;
     }).join("");
   });
   return h + `<div class="foot">Region card: build in any eligible city in this region, including outside your network (like location cards in Brass)</div>`;
@@ -451,7 +451,7 @@ function srcHTML(a) {
 function actTitle(a) {
   // 动作类别由标签页 / 确认条前缀给出，这里只写对象，避免「侦查：侦查…」这样的叠字
   const lv = ROMAN[a.level] || "";
-  if (a.kind === "BUILD") return `${T(B.industryZh[a.industry])}${lv} <span class="c">·</span> ${cityZh(a.city)}` +
+  if (a.kind === "BUILD") return `${T(B.industryZh[a.industry])} ${lv} <span class="c">·</span> ${cityZh(a.city)}` +
     (a.over ? ` <span class="c">Overbuild ${a.over.mine ? "" : "Opponent’s "}${T(B.industryZh[a.over.industry])}${ROMAN[a.over.level] || ""}</span>` : "");
   if (a.kind === "NETWORK") {
     let t = `${cityZh(a.link[0])}—${cityZh(a.link[1])}`;
@@ -461,21 +461,21 @@ function actTitle(a) {
   if (a.kind === "SELL") {
     if (a.sells && a.sells.length > 1)
       return `${a.sells.length} industries <span class="c"> (${a.sells.map(s => T(B.industryZh[s.industry]) + (ROMAN[s.level] || "")).join(", ")})</span>`;
-    return `${T(B.industryZh[a.industry])}${lv} <span class="c">·</span> ${cityZh(a.city)}`;
+    return `${T(B.industryZh[a.industry])} ${lv} <span class="c">·</span> ${cityZh(a.city)}`;
   }
   if (a.kind === "DEVELOP") return (a.dev || [a]).map(d => T(B.industryZh[d.industry]) + (ROMAN[d.level] || "")).join(", ");
-  if (a.kind === "LOAN") return "$30";
+  if (a.kind === "LOAN") return "£30";
   return "Discard 3 cards to draw 2 wild cards.";
 }
 function actGain(a) {
   if (a.kind === "BUILD") {
-    const bits = [`${a.vp} VP`, `Income +${a.income}`];
+    const bits = [`${a.vp} VP`, `Income +£{a.income}`];
     if (a.produces) bits.push(`Output ${a.produces}`);
     if (a.linkVp) bits.push(`Links ${a.linkVp}`);
     if (a.mktSale) bits.push(mktSaleText(a.mktSale, true));
     return bits.join(" · ");
   }
-  if (a.kind === "SELL") return `${a.vp} VP at era end · Income +${a.income}` + (a.hub ? ` · via ${T(a.hub.zh)}` + (a.hub.bonus ? ` (Port bonus: ${BONUS_FULL[a.hub.bonus]})` : "") : "") +
+  if (a.kind === "SELL") return `${a.vp} VP at era end · Income +£{a.income}` + (a.hub ? ` · via ${T(a.hub.zh)}` + (a.hub.bonus ? ` (Port bonus: ${BONUS_FULL[a.hub.bonus]})` : "") : "") +
     (a.hubProv ? ` · Port beer ×${a.hubProv}` : "");
   if (a.kind === "NETWORK") return (isSeaLink(a.link) ? "Shipping" : "Land route") + (a.second ? " · Double connection" : "");
   if (a.kind === "LOAN") return "Income −3 levels";
@@ -535,9 +535,9 @@ function renderActions() {
 
   const advisorMessage = best
     ? `★ Strategy Advisor
-      Current Money: $${player.money}
+      Current Money: £${player.money}
       Recommended Action: ${best.kind}
-      Action Cost: $${best.cost ?? 0}
+      Action Cost: £${best.cost ?? 0}
 
       ${explainMove(best)}`
     : "";
@@ -567,7 +567,7 @@ function renderActions() {
       <span class="body"><span class="tx">${actTitle(a)}</span>
         <span class="gain">${actGain(a)}</span>
         ${srcHTML(a) ? `<span class="src">${srcHTML(a)}</span>` : ""}</span>
-      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "$" + a.cost : "Free"}</span></button>`).join("")
+      <span class="price ${a.cost ? "" : "free"}">${a.cost ? "£" + a.cost : "Free"}</span></button>`).join("")
     : `<div class="empty">${UI.filter ? "No matching actions here" : "No actions available"}</div>`;
   if (advisorMessage) {
     list.insertAdjacentHTML(
@@ -598,7 +598,7 @@ function devPickerHTML(acts, best) {
     const two = acts.find(x => x.dev && x.dev.length === 2 && x.dev.every(d => d.industry === a.industry));
     const lv = n === 2 && two ? two.dev.map(d => ROMAN[d.level]).join(", ") : ROMAN[a.level];
     return `<button type="button" class="dpk ${n ? "on" : ""}" data-dind="${a.industry}">${actThumb(a)}
-      <span class="nm">${T(B.industryZh[a.industry])}${lv}${bestInds.includes(a.industry) ? "★" : ""}</span>
+      <span class="nm">${T(B.industryZh[a.industry])} ${lv}${bestInds.includes(a.industry) ? "★" : ""}</span>
       ${n === 2 ? `<span class="x2">×2</span>` : ""}</button>`;
   }).join("");
   let note = "Choose 1–2 industry tiles to remove. Pay 1 iron per tile. You may select the same industry twice.";
@@ -675,7 +675,7 @@ function pickBeer(k) {
   renderConfirm(); previewSel();
 }
 function mktSaleText(m, short) {
-  if (m.n) return short ? `Sells ${m.n} to market for $${m.money}` : `Sells ${m.n} resources to market when built, earning $${m.money}`;
+  if (m.n) return short ? `Sells ${m.n} to market for £${m.money}` : `Sells ${m.n} resources to market when built, earning £${m.money}`;
   if (m.why === "nohub") return short ? "No open port connection; no market sale" : "No connection to an open trade port: coal stays on the tile. Market sales happen only when built; connecting later does not trigger a sale.";
   return short ? "Market full" : "Market full: output stays on the tile";
 }
@@ -747,10 +747,10 @@ function renderConfirm() {
     box.classList.remove("hide"); return;
   }
   if (!a) { box.classList.add("hide"); return; }
-  const cost = a.cost ? `$${a.cost}` : "Free";
+  const cost = a.cost ? `£${a.cost}` : "Free";
   const detail = [];
-  if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`Tiles $${a.base}`);
-  if (a.mktCash && a.kind !== "DEVELOP") detail.push(`Resources $${a.mktCash}`);
+  if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`Tiles £${a.base}`);
+  if (a.mktCash && a.kind !== "DEVELOP") detail.push(`Resources £${a.mktCash}`);
   box.innerHTML = `<div class="ct"><div class="t1">${KIND_ZH[a.kind]}: ${actTitle(a)}</div>
       <div class="t2"><b style="color:var(--gold2)">${cost}</b>${detail.length ? ` (${detail.join(" + ")})` : ""} · ${actGain(viewAction(a))} ${srcHTML(a) ? " · " + srcHTML(a) : ""}</div>
       ${a.mktSale ? `<div class="t2 msale">${mktSaleText(a.mktSale, false)}</div>` : ""}
@@ -808,11 +808,11 @@ function renderMat(st) {
     const left = Object.values(p.supply[ind] || {}).reduce((a, b) => a + b, 0);
     if (!t) return `<div class="mrow2 off"><span class="bi" style="${artCSS(IND_ART[ind])}"></span><span class="bn">${T(B.industryZh[ind])}</span><span></span><span></span><span class="need">Depleted</span><span></span><span></span></div>`;
     const ok = t.era === "BOTH" || t.era === st.era;
-    return `<div class="mrow2 ${ok ? "" : "off"}" title="${T(B.industryZh[ind])} ${ROMAN[t.level]}: Cost $${t.cost} · ${t.vp} VP · Income +${t.income} · Links ${t.linkVp}${t.noDev ? " · Cannot be developed" : ""}${ok ? "" : ` (Unavailable in the ${T(st.eraZh)}; develop first)`}">
+    return `<div class="mrow2 ${ok ? "" : "off"}" title="${T(B.industryZh[ind])} ${ROMAN[t.level]}: Cost £${t.cost} · ${t.vp} VP · Income +£{t.income} · Links ${t.linkVp}${t.noDev ? " · Cannot be developed" : ""}${ok ? "" : ` (Unavailable in the ${T(st.eraZh)}; develop first)`}">
       <span class="bi" style="${artCSS(IND_ART[ind])}"></span><span class="bn">${T(B.industryZh[ind])}</span>
-      <span class="lv${t.noDev ? " nd" : ""}">${ROMAN[t.level]}</span><span class="cost">$${t.cost}</span>
+      <span class="lv${t.noDev ? " nd" : ""}">${ROMAN[t.level]}</span><span class="cost">£${t.cost}</span>
       <span class="need">${needHTML(t)}${ok ? "" : ` <span class="warn">Development required</span>`}</span>
-      <span class="give">${t.vp} VP +${t.income}</span><span class="left">×${left}</span></div>`;
+      <span class="give">${t.vp} VP +£{t.income}</span><span class="left">×${left}</span></div>`;
   }).join("");
 }
 function showMatModal(pid) {
@@ -831,9 +831,9 @@ function showMatModal(pid) {
             const left = sup[t.level] || 0;
             const era = t.era === "E1" ? "Sail" : t.era === "E2" ? "Steam" : "";
             return `<div class="tcard ${nt && nt.level === t.level ? "next" : ""} ${left ? "" : "gone"}">
-              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}<span class="c">$${t.cost}</span></div>${t.noDev ? `<div class="nodev-note" title="Must build this tile to unlock the next level">Cannot be developed</div>` : ""}
+              <div class="h"><span class="l">${ROMAN[t.level]}</span>${era ? `<span class="era">${era}</span>` : ""}<span class="c">£${t.cost}</span></div>${t.noDev ? `<div class="nodev-note" title="Must build this tile to unlock the next level">Cannot be developed</div>` : ""}
               <div class="r">${needHTML(t)}</div>
-              <div class="r"><span><b>${t.vp}</b>VP</span><span>· Income<b>+${t.income}</b></span><span>· Links<b>${t.linkVp}</b></span>${ind === "PROV" ? `<span title="Output when built in the Sail Era 1 beer, Output when built in the Steam Era 2 beer">· Beer output<b>1</b>/<b>2</b></span>` : t.produces ? `<span>· Output: ${ind === "COAL" ? "Coal" : "Iron"}<b>${t.produces}</b></span>` : ""}</div>
+              <div class="r"><span><b>${t.vp}</b>VP</span><span>· Income<b>+£{t.income}</b></span><span>· Links<b>${t.linkVp}</b></span>${ind === "PROV" ? `<span title="Output when built in the Sail Era 1 beer, Output when built in the Steam Era 2 beer">· Beer output<b>1</b>/<b>2</b></span>` : t.produces ? `<span>· Output: ${ind === "COAL" ? "Coal" : "Iron"}<b>${t.produces}</b></span>` : ""}</div>
               <span class="cnt">×${left}/${t.copies}</span></div>`;
           }).join("") + `</div>`;
       }).join("")}</div>
@@ -918,7 +918,7 @@ function cityTip(id) {
     const inds = [...new Set(c.slots.filter((s, i) => !taken.has(i)).flat())];
     if (inds.length) h += `<div class="sl" style="margin-top:5px;color:var(--gold)">Buildable: </div>` + inds.map(ind => {
       const bs = buildStatus(id, ind);
-      return `<div class="tipst ${bs.ok ? "ok" : "no"}">${bs.ok ? "✓" : "✗"} ${T(B.industryZh[ind])}${bs.e && bs.e.money != null ? ` $${bs.e.money}` : ""}${bs.ok ? "" : ": " + bs.why}</div>`;
+      return `<div class="tipst ${bs.ok ? "ok" : "no"}">${bs.ok ? "✓" : "✗"} ${T(B.industryZh[ind])}${bs.e && bs.e.money != null ? ` £${bs.e.money}` : ""}${bs.ok ? "" : ": " + bs.why}</div>`;
     }).join("");
   }
   const hub = (st.hubs || []).find(x => x.city === id && x.active);
@@ -940,7 +940,7 @@ function linkTip(key) {
   const cost = B.linkCost[`${st.era}_${l.sea ? "sea" : "land"}`];
   let h = `<b>${cityZh(a)} — ${cityZh(b)}</b> <span class="sl">${l.sea ? "Shipping" : "Land route"} · ${era}</span>`;
   if (bl) h += `<div class="row" style="color:${PCOL[bl.owner]}">Built by ${pname(st, bl.owner)}</div>`;
-  else if (cost && (l.era === "BOTH" || l.era === st.era)) h += `<div class="sl">Construction cost: $${cost.money}${cost.coal ? ` + ${cubeHTML("coal", 11)}` : ""}${cost.prov ? ` + ${cubeHTML("prov", 11)}` : ""}</div>`;
+  else if (cost && (l.era === "BOTH" || l.era === st.era)) h += `<div class="sl">Construction cost: £${cost.money}${cost.coal ? ` + ${cubeHTML("coal", 11)}` : ""}${cost.prov ? ` + ${cubeHTML("prov", 11)}` : ""}</div>`;
   else h += `<div class="sl">Unavailable in the ${T(st.eraZh)}</div>`;
   showTip(h);
 }
@@ -1116,7 +1116,7 @@ async function playOne(ev, final) {
     D.turnOrder = ev.order; D.round = (ev.round || D.round) + 1;
     renderPlayers(D); renderTop(D);
     Object.entries(ev.income || {}).forEach(([pid, v]) => {
-      if (v) floatText(screenOfPlayer(+pid, ".money"), (v > 0 ? "+$" : "−$") + Math.abs(v), v > 0 ? "#b9e3a7" : "#f09a8a");
+      if (v) floatText(screenOfPlayer(+pid, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), v > 0 ? "#b9e3a7" : "#f09a8a");
     });
     D.log.push({ who: "system", text: `Round ${ev.round} ends: income paid; lower spending acts earlier next round`, _new: 1 }); renderLog(D);
     D._strip = ev.order;              // 等下一位玩家开始时再显示顺位条（时代交替的画面要先播完）
@@ -1187,7 +1187,7 @@ async function playOne(ev, final) {
   if (ev.kind === "NETWORK") [ev.link, ev.second].filter(Boolean).forEach(l => map.flashLink([...l].sort().join("|"), col));
   // 数字飘字：钱、收入、分
   const dm = (ev.dmoney || {})[pid];
-  if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+$" : "−$") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
+  if (dm) floatText(screenOfPlayer(pid, ".money"), (dm > 0 ? "+£" : "−£") + Math.abs(dm), dm > 0 ? "#b9e3a7" : "#f0b08a");
   const di = (ev.dincome || {})[pid];
   if (di) setTimeout(() => floatText(screenOfPlayer(pid, ".r2"), `Income ${di > 0 ? "+" : ""}${di}`, di > 0 ? "#b9e3a7" : "#f09a8a"), DUR(260));
   if (ev.kind === "SELL") floatText(tgt, "Sold！", "#ffe39a");
@@ -1198,7 +1198,7 @@ async function playOne(ev, final) {
     for (let j = 0; j < sold; j++) flyCube(ev.industry === "COAL" ? "coal" : "iron", tgt, screenOfMarket(zone), 200 + j * 90, 480);
   }
   Object.entries(ev.dmoney || {}).forEach(([op, v]) => {       // 被取用资源的对手也有反应
-    if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+$" : "−$") + Math.abs(v), "#b9e3a7");
+    if (+op !== pid && v) floatText(screenOfPlayer(+op, ".money"), (v > 0 ? "+£" : "−£") + Math.abs(v), "#b9e3a7");
   });
   (ev.notes || []).forEach(n => { if (!n.startsWith("取用")) toast(n); });
   if (!isMe && SET.step && !UI.skip && !document.hidden) {
@@ -1219,7 +1219,7 @@ function eraSplash(ev) {
       const tot = Object.values(g).reduce((a, b) => a + b, 0);
       const parts = [["tiles", "Tiles"], ["links", "Links"], ["contested", "Shared cities"]].filter(([k]) => g[k]).map(([k, z]) => `${z} ${g[k]}`).join(" · ");
       return `<div class="g">${avatarHTML(p.avatar, PCOL[p.id], 42)}<div class="n" style="color:${PCOL[p.id]}">${T(p.name)}</div>
-        <div class="v">+${tot}</div><div class="d">${parts || "—"}</div><div class="d">Total ${ev.vp[p.id]} VP</div></div>`;
+        <div class="v">+£{tot}</div><div class="d">${parts || "—"}</div><div class="d">Total ${ev.vp[p.id]} VP</div></div>`;
     }).join("");
     d.innerHTML = `<h2>${T(ev.eraZh)} ends</h2><p>Flipped tiles score; links score the link values of flipped tiles at both ends</p><div class="gains">${rows}</div>
       <p>${ev.final ? "The final ledger" : "Entering the Steam Era: level I tiles and all links will be removed"}</p><button class="primary">Continue</button>`;

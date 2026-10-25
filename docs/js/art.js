@@ -21,7 +21,7 @@ export const IND_ORDER = ["COAL", "IRON", "PROV", "COTTON", "MFG", "LUX"];
 export const PCOL = ["#c0492f", "#3574ad", "#46895a", "#c9a24a", "#8561b3", "#cf7a3e"];
 export const PCOL_ZH = ["Vermilion", "Cobalt", "Forest", "Ochre", "Violet", "Rust"];
 export const ROMAN = ["", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ"];
-export const BONUS_SHORT = { develop: "On", income: "Inc", vp: "VP", money: "£" };
+export const BONUS_SHORT = { develop: "Dev", income: "Inc", vp: "VP", money: "£" };
 export const BONUS_FULL = { develop: "Develop one tile for free (your choice)", income: "Income +2 steps", vp: "+3 VP", money: "+£5" };
 
 // 区域牌画面：按区域 id 取地形图不同片段。用无符号右移，避免哈希转负数后背景跑出框外。
