@@ -566,3 +566,6 @@ table.score tr.me td{background:rgba(201,161,90,.08)}
 #playbar span,#playbar button{white-space:nowrap}
 #playwho{min-width:0;overflow:hidden}
 #playwho > span:not(.pstep):not(.ptap){overflow:hidden;text-overflow:ellipsis;max-width:9em}
+#mapbtns {
+  display: none !important;
+}
