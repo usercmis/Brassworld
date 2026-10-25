@@ -638,3 +638,6 @@ table.score tr.me td{background:rgba(201,161,90,.08)}
 .modal.wide::after {
   display: none;
 }
+#mapbtns {
+  display: none !important;
+}
