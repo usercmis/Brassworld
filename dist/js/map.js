@@ -28,6 +28,23 @@ export class MapView {
     this.fitTo(this.home, false);
   }
 
+  // Reuse the SVG input bindings and application event handlers when switching maps.
+  replaceBoard(B, M, small) {
+    cancelAnimationFrame(this._raf);
+    this.B = B; this.M = M; this.city = {}; this.linkInfo = {}; this.dotLbl = {};
+    B.cities.forEach(c => { this.city[c.id] = Object.assign({}, c, M.cities[c.id]); });
+    B.links.forEach(l => { this.linkInfo[[l.a,l.b].sort().join('|')] = l; });
+    this.build();
+    if (small) {
+      this.fitCities(B.cities.map(c => c.id), 1.35, 24, false);
+      this.home = { ...this.view };
+    } else {
+      const b = M.bounds, padY = (b[3]-b[1]) * 0.12;
+      this.home = { x:b[0], y:b[1]-padY, w:b[2]-b[0], h:b[3]-b[1]+padY*1.4 };
+      this.fitTo(this.home, false);
+    }
+  }
+
   on(evt, fn) { (this.handlers[evt] = this.handlers[evt] || []).push(fn); }
   emit(evt, ...a) { (this.handlers[evt] || []).forEach(f => f(...a)); }
 
