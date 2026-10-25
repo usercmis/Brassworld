@@ -19,10 +19,10 @@ const TERRAIN = { src: "/assets/terrain.png", W: 1600, H: 900 };
 
 export const IND_ORDER = ["COAL", "IRON", "PROV", "COTTON", "MFG", "LUX"];
 export const PCOL = ["#c0492f", "#3574ad", "#46895a", "#c9a24a", "#8561b3", "#cf7a3e"];
-export const PCOL_ZH = ["朱红", "钴蓝", "墨绿", "金黄", "紫罗兰", "橙褐"];
+export const PCOL_ZH = ["Vermilion", "Cobalt", "Forest", "Ochre", "Violet", "Rust"];
 export const ROMAN = ["", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ"];
-export const BONUS_SHORT = { develop: "开", income: "收", vp: "分", money: "£" };
-export const BONUS_FULL = { develop: "免费开发 1 块板件（可自选）", income: "收入 +2 格", vp: "+3 胜利点", money: "+£5" };
+export const BONUS_SHORT = { develop: "Dev", income: "Inc", vp: "VP", money: "US$" };
+export const BONUS_FULL = { develop: "Develop one tile for free (your choice)", income: "Income +2 steps", vp: "+3 VP", money: "+US$5" };
 
 // 区域牌画面：按区域 id 取地形图不同片段。用无符号右移，避免哈希转负数后背景跑出框外。
 export function regionArt(id) {
@@ -70,7 +70,7 @@ export const SYMBOLS = `
 <symbol id="cube-iron" viewBox="0 0 20 20"><path d="M10 1.5l7.5 4.2v8.6L10 18.5 2.5 14.3V5.7z" fill="#8a3f12"/><path d="M10 1.5l7.5 4.2L10 9.9 2.5 5.7z" fill="#f09a45"/><path d="M2.5 5.7L10 9.9v8.6l-7.5-4.2z" fill="#c4661f"/><path d="M5 5.2l2.4-1.3" stroke="#ffd9a8" stroke-width="1" stroke-linecap="round"/></symbol>
 <symbol id="cube-prov" viewBox="0 0 20 20"><path d="M5 4h10c1.4 3 1.4 9 0 12H5C3.6 13 3.6 7 5 4z" fill="#8a6a3a"/><path d="M5 4h10c.5 1 .8 2 .9 3H4.1c.1-1 .4-2 .9-3z" fill="#c09a5c"/><rect x="3.8" y="8.6" width="12.4" height="1.4" fill="#4a3518"/><rect x="3.8" y="12.4" width="12.4" height="1.4" fill="#4a3518"/></symbol>
 <symbol id="i-anchor" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 6.7v14M7.5 10h9M4 13c0 4.5 3.6 7.6 8 7.6s8-3.1 8-7.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
-<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#d9b25a" stroke="#6b5220" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#8a6a2a" stroke-width="1"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="800" fill="#5a4214" font-family="Georgia,serif">£</text></symbol>
+<symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="#d9b25a" stroke="#6b5220" stroke-width="1.4"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#8a6a2a" stroke-width="1"/><text x="12" y="16" text-anchor="middle" font-size="10" font-weight="800" fill="#5a4214" font-family="Georgia,serif">$</text></symbol>
 <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.2 6.6.7-5 4.5 1.4 6.6L12 17.2l-5.9 3.3 1.4-6.6-5-4.5 6.6-.7z"/></symbol>
 <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9H9v-9H4z"/></symbol>
 `;
@@ -86,8 +86,8 @@ export function cubeHTML(kind, size = 13) {
 // ---- 头像 ----
 // 有插画就用插画（web/assets/avatars/<键>.jpg，Canva 生成的油画肖像），没有就画一个剪影，边框用玩家色。
 export const AVATARS = ["uk", "eu", "us", "la", "cn", "jp", "in", "sea", "af", "au"];
-export const AVATAR_ZH = { uk: "英伦实业家", eu: "欧陆工厂主", us: "美国铁路商", la: "南美庄园主",
-  cn: "华商买办", jp: "明治实业家", in: "孟买纺织商", sea: "南洋侨商", af: "开罗棉商", au: "悉尼羊毛商" };
+export const AVATAR_ZH = { uk: "British industrialist", eu: "European manufacturer", us: "American rail baron", la: "South American planter",
+  cn: "Chinese merchant", jp: "Meiji industrialist", in: "Bombay textile trader", sea: "Straits merchant", af: "Cairo cotton trader", au: "Sydney wool trader" };
 const AV_OK = {};
 export function avatarHTML(key, color, size = 40) {
   const k = key && key !== "you" ? key : "uk";
