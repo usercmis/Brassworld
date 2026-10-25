@@ -560,5 +560,8 @@ html.a11y-reduce-motion *,html.a11y-reduce-motion *::before,html.a11y-reduce-mot
 #playbar span,#playbar button{white-space:nowrap}
 #playwho{min-width:0;overflow:hidden}
 #playwho > span:not(.pstep):not(.ptap){overflow:hidden;text-overflow:ellipsis;max-width:9em}
-/* Hide all market displays and the mobile tab; keep their containers for game rendering. */
-#markets,#markets2,#mktPane,#sheetTabs button[data-pane="mkt"]{display:none!important}
+/* Hide Britain’s market display while keeping the game rules unchanged. */
+#markets .mz[data-zone="BRITAIN"],
+#markets2 .mz[data-zone="BRITAIN"]{display:none!important}
+#markets{grid-template-columns:repeat(3,minmax(96px,150px))}
+#infobar.stack #markets{grid-template-columns:repeat(3,minmax(0,1fr))}
