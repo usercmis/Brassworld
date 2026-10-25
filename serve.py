@@ -2,7 +2,6 @@
 """Local frontend server; preserves the original Brassworld rules via its API."""
 import argparse, http.cookiejar, json, os, secrets, threading, sqlite3, hmac, hashlib
 from game import engine as eco_engine
-from game import combined
 from http.cookies import SimpleCookie
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -53,7 +52,7 @@ class Handler(SimpleHTTPRequestHandler):
             return sid, sessions[sid]
 
     def json_reply(self, code, payload, sid=None):
-        if payload.get('engine') in ('atlas-eco-v1', combined.ENGINE) and payload.get('save'):
+        if payload.get('engine') == 'atlas-eco-v1' and payload.get('save'):
             payload['save']['signature'] = sign_save(payload['save'])
         data = json.dumps(payload, ensure_ascii=False).encode()
         self.send_response(code)
@@ -69,31 +68,25 @@ class Handler(SimpleHTTPRequestHandler):
             with sqlite3.connect(DB_PATH, timeout=60) as db:
                 db.execute('BEGIN IMMEDIATE')
                 row = db.execute('SELECT state FROM eco_games WHERE sid=?', (sid,)).fetchone()
-                if path == '/api/new' and body.get('mode', 'combined') == 'combined':
-                    state = combined.new_game(body)
-                    result = combined.public_state(state)
-                elif path == '/api/new' and body.get('mode') == 'eco':
+                if path == '/api/new' and body.get('mode') == 'eco':
                     state = eco_engine.new_game(body)
                     result = eco_engine.public_state(state)
-                elif path == '/api/load' and isinstance(body.get('save'), dict) and body['save'].get('engine') in ('atlas-eco-v1', combined.ENGINE):
+                elif path == '/api/load' and isinstance(body.get('save'), dict) and body['save'].get('engine') == 'atlas-eco-v1':
                     save = body['save']
                     if not hmac.compare_digest(str(save.get('signature','')), sign_save(save)):
-                        raise eco_engine.RuleError('This local save cannot be verified on this server. Start a new game or use the original server database.')
+                        raise eco_engine.RuleError('This Eco save cannot be verified on this server. Start a new Eco game; saves from another server need a migration.')
                     state = save['game']
-                    result = (combined if save['engine'] == combined.ENGINE else eco_engine).public_state(state)
+                    result = eco_engine.public_state(state)
                 elif path in ('/api/new','/api/load'):
                     return False
                 elif row:
                     state = json.loads(row[0])
-                    if state.get('engine') == combined.ENGINE:
-                        result = combined.public_state(state) if path == '/api/state' else combined.handle(state,path,body)
-                    elif state.get('mapId') != eco_engine.MAP_ID:
+                    if state.get('mapId') != eco_engine.MAP_ID:
                         if path == '/api/state':
                             self.json_reply(200, {'started': False}, sid)
                             return True
                         raise eco_engine.RuleError('Start a new Eco game for the Industrial Belt 20 map.')
-                    else:
-                        result = eco_engine.public_state(state) if path == '/api/state' else eco_engine.handle(state,path,body)
+                    result = eco_engine.public_state(state) if path == '/api/state' else eco_engine.handle(state,path,body)
                 elif path == '/api/state':
                     # Opening the new-game selector must work offline. Classic
                     # restores its browser save via /api/load when requested.
@@ -177,7 +170,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f'Brassworld Atlas: http://{args.host}:{args.port}', flush=True)
-    print('Combined Era: local beginner rules. Classic: upstream rules. Eco: local Eco rules.', flush=True)
+    print('Classic: upstream rules. Eco: independent local world engine + Eco AI.', flush=True)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally: server.server_close()

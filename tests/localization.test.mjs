@@ -13,10 +13,10 @@ test('all captured backend messages across both eras translate fully',()=>{
  }
 });
 test('complete sentences preserve numbers, resources, players and discard choices',()=>{
- assert.equal(translate('建造 酿酒厂Ⅰ · 伯明翰（£6） · 弃「中部与约克郡」'),'Build Brewery Ⅰ in Birmingham (US$6) · Discard: Midlands & Yorkshire');
- assert.equal(translate('与 你 网络首次互通：双方各得 £8、收入 +1'),'Networks connected with You for the first time: each player receives US$8 and +1 income');
- assert.equal(translate('开发 煤矿Ⅰ、煤矿Ⅱ（£8）'),'Develop Coal mine Ⅰ, Coal mine Ⅱ (US$8)');
- assert.equal(translate('资金不足：拆除 煤矿Ⅲ · 里尔，得 £4'),'Insufficient funds: liquidate Coal mine Ⅲ in Lille for US$4');
+ assert.equal(translate('建造 酿酒厂Ⅰ · 伯明翰（£6） · 弃「中部与约克郡」'),'Build Brewery Ⅰ in Birmingham (£6) · Discard: Midlands & Yorkshire');
+ assert.equal(translate('与 你 网络首次互通：双方各得 £8、收入 +1'),'Networks connected with You for the first time: each player receives £8 and +1 income');
+ assert.equal(translate('开发 煤矿Ⅰ、煤矿Ⅱ（£8）'),'Develop Coal mine Ⅰ, Coal mine Ⅱ (£8)');
+ assert.equal(translate('资金不足：拆除 煤矿Ⅲ · 里尔，得 £4'),'Insufficient funds: liquidate Coal mine Ⅲ in Lille for £4');
 });
 test('display localization never mutates incoming records or save data',()=>{
  const player=Object.freeze({id:1,name:'测试名字',isMe:false});
@@ -38,11 +38,6 @@ test('typed replay events generate English without parsing the backend sentence'
  const board={cities:[{id:'birmingham',zh:'伯明翰'}],industryZh:{COAL:'煤矿'}};
  const event=Object.freeze({kind:'BUILD',industry:'COAL',level:2,city:'birmingham',cost:7,discarded:Object.freeze(['铁厂']),text:'服务器未来改变的句子'});
  const before=JSON.stringify(event);
- assert.equal(describeAction(event,board),'Build Coal mine Ⅱ in Birmingham (US$7) · Discard: Iron works');
+ assert.equal(describeAction(event,board),'Build Coal mine Ⅱ in Birmingham (£7) · Discard: Iron works');
  assert.equal(JSON.stringify(event),before);
-});
-
-test('USD rendering includes historical amounts without changing their values',()=>{
- assert.equal(translate('Cash £30 · Income +£5'),'Cash US$30 · Income +US$5');
- for (const message of messages) assert(!translate(message).includes('£'));
 });

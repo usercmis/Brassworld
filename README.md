@@ -1,11 +1,3 @@
-# Brassworld — Combined Era beginner game
-
-New games default to an eight-round combined era on the original world map. Build for VP and income, connect for US$5 and 3 VP, or save money. All industry levels are available without resource requirements or era resets.
-
-Run `python3 serve.py` and open http://localhost:3000. See [COMBINED_ERA.md](COMBINED_ERA.md) for rules, compatibility, backend limitations and validation. Classic and Eco modes remain available.
-
----
-
 **1. What is the goal of Brassworld?** 
 
 
