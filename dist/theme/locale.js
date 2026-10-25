@@ -207,11 +207,7 @@ const patterns = [
  [/^(.+?)·(.+)$/, (tile,city) => `${translate(tile)} in ${translate(city)}`],
  [/^(.+?)([ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+)$/, (industry, level) => `${translate(industry)} ${level}`],
 ];
-// Historical server messages still contain pounds; render all money as USD.
 export function translate(value) {
- return translateRaw(value).replaceAll('£', 'US$');
-}
-function translateRaw(value) {
  if (value == null) return '';
  const text = String(value), trimmed = text.trim();
  if (!han.test(text)) return text;
@@ -254,5 +250,5 @@ export function describeAction(event, board) {
   default: return translate(event.text || 'Pass');
  }
  if (event.discarded?.length) text += ` · Discard: ${event.discarded.map(translate).join(', ')}`;
- return text.replaceAll('£', 'US$');
+ return text;
 }

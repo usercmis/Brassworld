@@ -222,8 +222,8 @@ export class MapView {
     if (pollution !== null) {
       const eg = el("g", { class: "eco-city-badge" + (pollution >= 6 ? " eco-high" : "") });
       eg.appendChild(el("rect", { x: -1.65, y: 0.95, width: 3.3, height: .58, rx: .1 }));
-      const text = el("text", { x: 0, y: 1.36 }); text.textContent = `P ${pollution}/10${pollution >= 6 ? " +US$5" : ""}`; eg.appendChild(text);
-      const title = el("title", {}); title.textContent = `Pollution ${pollution}/10. ${pollution >= 6 ? "Building here costs US$5 extra." : "No pollution surcharge."}`; eg.appendChild(title);g.appendChild(eg);
+      const text = el("text", { x: 0, y: 1.36 }); text.textContent = `P ${pollution}/10${pollution >= 6 ? " +£5" : ""}`; eg.appendChild(text);
+      const title = el("title", {}); title.textContent = `Pollution ${pollution}/10. ${pollution >= 6 ? "Building here costs £5 extra." : "No pollution surcharge."}`; eg.appendChild(title);g.appendChild(eg);
     }
     // 建造格
     c.slots.forEach((allowed, i) => {
