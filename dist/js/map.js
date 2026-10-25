@@ -1,3 +1,4 @@
+import { translate as T } from "../theme/locale.js";
 // 地图视图：SVG 图层、镜头、城市牌面、连线、高亮。
 // 几何全部来自 tools/build_map.py 生成的 map.json（显示坐标已做密度放大、航线已寻路）。
 import { el, IND_ART, PORT_ART, artSVG, PCOL, ROMAN, BONUS_SHORT } from "./art.js";
@@ -76,14 +77,14 @@ export class MapView {
     this._lod = "lo";
 
     // 标签
-    const ZZ = { BRITAIN: "不列颠", EUROPE: "欧陆", AMERICAS: "美洲", ASIAPAC: "亚太" };
+    const ZZ = { BRITAIN: "Britain", EUROPE: "Europe", AMERICAS: "Americas", ASIAPAC: "Asia-Pacific" };
     Object.entries(this.M.zones).forEach(([z, [x, y]]) => {
       const t = el("text", { x, y, class: "zone-lbl" }); t.textContent = ZZ[z]; this.gZone.appendChild(t);
     });
     this.B.regions.forEach(r => {
       const p = this.M.regions[r.id]; if (!p) return;
       const t = el("text", { x: p[0], y: p[1], class: "reg-lbl" });
-      t.textContent = r.zh; t.dataset.region = r.id; this.gReg.appendChild(t);
+      t.textContent = T(r.zh); t.dataset.region = r.id; this.gReg.appendChild(t);
     });
 
     // 连线：深色描边 + 浅色芯线，海上陆上都看得见（以前海运线在深色海面上几乎隐形，
@@ -118,7 +119,7 @@ export class MapView {
       this.gPlates.appendChild(g); this.plateEls[c.id] = g;
       // 牌面缩成点时的小字名：否则香港、广州这种密集处只剩两个点，认不出是哪座城
       const t = el("text", { x: c.x, y: c.y, class: "dotlbl" + (c.hub ? " hub" : "") });
-      t.textContent = c.short; t.dataset.city = c.id; t.dataset.pri = c.hub ? 2 : (c.port ? 1 : 0);
+      t.textContent = T(c.short); t.dataset.city = c.id; t.dataset.pri = c.hub ? 2 : (c.port ? 1 : 0);
       this.gDotLbl.appendChild(t); (this.dotLbl = this.dotLbl || {})[c.id] = t;
     });
   }
@@ -171,10 +172,10 @@ export class MapView {
     g.classList.toggle("contested", contested);
     const n = c.slots.length, W = n + SLOT_GAP * (n - 1);
     // 名牌
-    const nw = c.short.length * 0.52 + 0.4;
+    const nw = Math.max(1.2, T(c.short).length * 0.25 + 0.4);
     const nb = el("g", { class: "nm" + (c.hub ? " hub" : "") });
     nb.appendChild(el("rect", { x: -nw / 2, y: 0.18, width: nw, height: 0.6, rx: 0.06, "vector-effect": "non-scaling-stroke" }));
-    const tx = el("text", { x: 0, y: 0.62 }); tx.textContent = c.short; nb.appendChild(tx);
+    const tx = el("text", { x: 0, y: 0.62 }); tx.textContent = T(c.short); nb.appendChild(tx);
     g.appendChild(nb);
     // 贸易港收货栏：港口插画 + 收什么货 + 港口奖励
     if (hub) {
@@ -196,7 +197,7 @@ export class MapView {
       bt.textContent = claimed ? "✓" : (BONUS_SHORT[hub.bonus] || "·");
       hg.appendChild(bt);
       if (hub.open === false) {
-        const tt = el("title", {}); tt.textContent = hub.zh + "：未开张，须有连线接入这座城市";
+        const tt = el("title", {}); tt.textContent = T(hub.zh) + ": Closed; build a link to this city to open the port";
         hg.appendChild(tt);
       }
       g.appendChild(hg);
