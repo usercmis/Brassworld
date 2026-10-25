@@ -14,6 +14,15 @@ from uuid import uuid4
 ROOT = Path(__file__).resolve().parents[1]
 BOARD = json.loads((ROOT / 'upstream/api/board').read_text(encoding='utf-8'))
 SETUP = json.loads((ROOT / 'game/setup.json').read_text(encoding='utf-8'))
+# Small-map edition: keep all original industry and environmental rules.
+MAP_ID = 'industrial-belt-20-v1'
+KEEP_REGIONS = {'LANCS', 'MIDYORK', 'NORTHBR', 'SOUTHBR', 'NEENG', 'LAKES'}
+BOARD['cities'] = [c for c in BOARD['cities'] if c['region'] in KEEP_REGIONS and c['id'] != 'neworleans']
+_kept = {c['id'] for c in BOARD['cities']}
+BOARD['regions'] = [r for r in BOARD['regions'] if r['id'] in KEEP_REGIONS]
+BOARD['links'] = [l for l in BOARD['links'] if l['a'] in _kept and l['b'] in _kept]
+SETUP['hubs'] = [h for h in SETUP['hubs'] if h['city'] in _kept]
+SETUP['cards'] = [c for c in SETUP['cards'] if c[0] != 'REGION' or c[1] in KEEP_REGIONS]
 CITIES = {c['id']: c for c in BOARD['cities']}
 REGIONS = {r['id']: r for r in BOARD['regions']}
 TILES = {(ind, t['level']): t for ind, ts in BOARD['tiles'].items() for t in ts}
@@ -45,11 +54,11 @@ def new_game(options=None, seed=None):
     options = options or {}
     rng = random.Random(seed)
     homes = rng.sample(list(REGIONS), 4)
-    # A consistent Nordic starting network makes the new mode easier to learn.
-    if 'BALTIC' not in homes:
-        homes[0] = 'BALTIC'
+    # A consistent Lancashire starting network makes the new mode easier to learn.
+    if 'LANCS' not in homes:
+        homes[0] = 'LANCS'
     else:
-        i = homes.index('BALTIC'); homes[0], homes[i] = homes[i], homes[0]
+        i = homes.index('LANCS'); homes[0], homes[i] = homes[i], homes[0]
     deck = fresh_deck(rng)
     players = []
     for pid in range(4):
@@ -75,7 +84,7 @@ def new_game(options=None, seed=None):
             slots = [2]*max_price
             for i in range(empty): slots[i//2] -= 1
             markets[zone][res] = {'slots': slots, 'per': 2}
-    return {'engine': 'atlas-eco-v1', 'ver': 1, 'era': 'E1', 'round': 1,
+    return {'engine': 'atlas-eco-v1', 'mapId': MAP_ID, 'ver': 1, 'era': 'E1', 'round': 1,
             'players': players, 'order': [0,1,2,3], 'turnIndex': 0, 'actionsLeft': 1,
             'deck': deck, 'discard': [], 'placed': [], 'builtLinks': links, 'hubs': hubs,
             'markets': markets, 'zoneGroup': {z:z for z in ZONES}, 'linkedPairs': [],
@@ -584,6 +593,8 @@ def card_json(card):
 
 
 def public_state(s):
+    if s.get('mapId') != MAP_ID:
+        raise RuleError('This save uses a different map. Start a new Eco game for Industrial Belt 20.')
     acts,info=actions(s,0,True) if not s['over'] and active(s)==0 else ([],{})
     ps=[]
     for p in s['players']:
@@ -601,7 +612,7 @@ def public_state(s):
             markets[zone][res]={'price':next((i+1 for i,n in enumerate(slots) if n),maxp+1),'count':sum(slots),'capacity':maxp*v['per'],'maxPrice':maxp,'outside':maxp+1,'ladder':[{'price':i+1,'n':n,'per':v['per']} for i,n in enumerate(slots)]}
     hubs=[{**h,'open':open_hub(s,h)} for h in s['hubs']]
     return {'started':True,'over':s['over'],'ver':s['ver'],'era':s['era'],'eraZh':'帆船时代' if s['era']=='E1' else '蒸汽时代',
-            'round':s['round'],'deck':len(s['deck']),'mode':'eco','engine':'atlas-eco-v1','players':ps,
+            'round':s['round'],'deck':len(s['deck']),'mode':'eco','engine':'atlas-eco-v1','mapId':MAP_ID,'mapCities':sorted(CITIES),'players':ps,
             'active':active(s),'turnOrder':s['order'],'actionsLeft':s['actionsLeft'],'actionsTotal':1 if s['era']=='E1' and s['round']==1 else 2,
             'hand':[card_json(c) for c in s['players'][0]['hand']], 'placed':deepcopy(s['placed']),
             'builtLinks':deepcopy(s['builtLinks']),'reach':sorted(reach(s,0)),'hubs':hubs,
