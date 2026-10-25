@@ -24,11 +24,11 @@ Run `python3 serve.py` and open http://localhost:3000. The Python backend is req
 ## Verification
 
 - `python3 -m py_compile serve.py game/combined.py`
-- `python3 -m unittest discover -s tests -p test_combined.py`: three scenario tests cover full game, fixed route costs/all routes, tile persistence, exact income/VP, finality, invalid/stale actions and save round-trip.
+- `python3 -m unittest discover -s tests -p test_combined.py`: four scenario tests cover full game, fixed route costs/all routes, tile persistence, exact income/VP, finality, invalid/stale actions and save round-trip.
 - `python3 tests/combined-api.py`: against a disposable local server on port 3012 (or set TEST_URL); covers real HTTP gameplay through eight rounds, settings, save verification, tamper rejection and English payloads.
 - `node --check dist/js/app.js` and six localization regression tests pass (`node --test tests/localization.test.mjs`). `docs/` and `dist/` interface copies are synchronized, including a pre-existing map-module mismatch.
 - In-app browser: built, connected, passed, finished all eight rounds, checked final totals, help, industry board, journal, reload persistence and visible English/title text. Checked 390px phone, 768px tablet and 1440px desktop layout; phone final table fits.
 - `tests/combined-browser.cjs` is a repeatable optional Playwright check; direct Chrome launch was blocked by the local sandbox, so the completed UI check used the in-app browser instead.
-- Existing Eco suite: 30 total Python tests including the three new scenarios; 25 pass, five fail because old Eco tests still expect 80 cities or removed world cities while the unchanged Eco engine restricts its map to 20. Those Eco tests/engine are outside this rules change.
+- Existing Eco suite: 31 total Python tests including the four new scenarios; 26 pass, five fail because old Eco tests still expect 80 cities or removed world cities while the unchanged Eco engine restricts its map to 20. Those Eco tests/engine are outside this rules change.
 
 During UI testing fixed existing missing Music button startup crash and mobile map toolbar stretching. Beginner-specific descriptions replace resource/era constraints, and passing no longer asks for a discard. No text mutation observer is used; backend Combined messages are English at source.
