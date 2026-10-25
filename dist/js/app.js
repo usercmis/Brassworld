@@ -7,8 +7,8 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const ZONE_ZH = { BRITAIN: "不列颠", EUROPE: "欧陆", AMERICAS: "美洲", ASIAPAC: "亚太" };
-const KIND_ORDER = ["BUILD", "NETWORK", "SELL", "DEVELOP", "LOAN", "SCOUT"];
-const KIND_ZH = { BUILD: "建造", NETWORK: "连接", SELL: "销售", DEVELOP: "开发", LOAN: "贷款", SCOUT: "侦查" };
+const KIND_ORDER = ["BUILD", "NETWORK", "SELL", "DEVELOP", "LOAN", "SCOUT", "CLEAN_UP", "ECO_UPGRADE"];
+const KIND_ZH = { BUILD: "建造", NETWORK: "连接", SELL: "销售", DEVELOP: "开发", LOAN: "贷款", SCOUT: "侦查", CLEAN_UP: "Clean Up", ECO_UPGRADE: "Eco Upgrade" };
 const RES_ZH = { coal: "煤", iron: "铁", prov: "啤酒" };
 const isMobile = () => matchMedia("(max-width: 760px)").matches;
 
@@ -35,7 +35,7 @@ const UI = { tab: null, filter: null, sel: null, card: null, busy: false, playin
   discard: [], passMode: false, devPick: [], devBonus: [], beer: [] };
 
 const api = (p, b) => fetch(p, b ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) } : {})
-  .then(r => r.json());
+  .then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.error || 'Request failed'); return data; });
 const city = id => B.cities.find(c => c.id === id);
 const cityZh = id => (map && map.city[id] ? map.city[id].short : (city(id) || {}).zh || id);
 const V = () => D || S;
@@ -80,19 +80,19 @@ async function boot() {
 function saveLocal(st) {
   try {
     if (st.save && !st.over) {
-      localStorage.setItem("bw_save", JSON.stringify(st.save));
-      localStorage.setItem("bw_save_meta", JSON.stringify({
+      localStorage.setItem("bw_full_eco_save", JSON.stringify(st.save));
+      localStorage.setItem("bw_full_eco_save_meta", JSON.stringify({
         t: Date.now(), round: st.round, era: st.eraZh, mode: st.mode,
         players: st.players.map(p => ({ name: p.name, vp: p.vp, me: p.isMe }))
       }));
     }
-    if (st.over) { localStorage.removeItem("bw_save"); localStorage.removeItem("bw_save_meta"); }
+    if (st.over) { localStorage.removeItem("bw_full_eco_save"); localStorage.removeItem("bw_full_eco_save_meta"); }
   } catch (e) { /* 隐私模式等情况下存不了，不影响游戏 */ }
 }
 function localSave() {
   try {
-    const s = localStorage.getItem("bw_save");
-    return s ? { save: JSON.parse(s), meta: JSON.parse(localStorage.getItem("bw_save_meta") || "{}") } : null;
+    const s = localStorage.getItem("bw_full_eco_save");
+    return s ? { save: JSON.parse(s), meta: JSON.parse(localStorage.getItem("bw_full_eco_save_meta") || "{}") } : null;
   } catch (e) { return null; }
 }
 async function resumeLocal(quiet) {
@@ -162,7 +162,9 @@ function renderAll() {
 
 function renderTop(st) {
   $("#eraChip").textContent = st.eraZh;
-  $("#roundInfo").textContent = `第 ${st.round} 轮 · 牌库 ${st.deck}`;
+  if (!$("#btnEcoRules")) { const b = document.createElement("button"); b.id="btnEcoRules"; b.textContent="Eco rules"; b.onclick=()=>modal(ECO_RULES_HTML); $("#menu").append(b); }
+  $("#btnEcoRules").hidden = !st.eco;
+  $("#roundInfo").textContent = `第 ${st.round} 轮 · 牌库 ${st.deck}${st.eco ? " · ECO MODE" : ""}`;
   const myTurn = !st.over && st.active === me(st).id && !UI.playing;
   $("#pips").innerHTML = [...Array(st.actionsTotal || 2).keys()].map(i => `<span class="pip ${myTurn && i < st.actionsLeft ? "" : "off"}"></span>`).join("");
 }
@@ -180,7 +182,7 @@ function renderPlayers(st, bump = {}) {
       <div class="r1"><span class="nm" style="color:${PCOL[p.id]}">${englishPlayerName(p.name)}</span>
       <span class="vp ${bump[p.id] ? "bump" : ""}" title="胜利点">${p.vp}</span></div>
       <div class="r2"><span>$<b class="money">${p.money}</b></span><span>收入 <b>${p.income >= 0 ? "+" : ""}${p.income}</b></span></div>
-      <div class="r3">${p.levelZh ? `<span class="lv">${p.levelZh}</span>` : ""}<span class="home">${p.homeZh}</span>${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="已与 ${pname(st, i)} 互通"></span>`).join("")}</div>
+      <div class="r3">${p.levelZh ? `<span class="lv">${p.levelZh}</span>` : ""}<span class="home">${p.homeZh}</span>${st.eco ? `<span class="eco-green">♧ ${p.greenPoints || 0} green</span>` : ""}${links.map(i => `<span class="lnkdot" style="background:${PCOL[i]}" title="已与 ${pname(st, i)} 互通"></span>`).join("")}</div>
       </div></div>`;
   }).join("");
   layoutInfobar();
@@ -447,6 +449,8 @@ function srcHTML(a) {
   return parts.join(" ");
 }
 function actTitle(a) {
+  if (a.kind === "CLEAN_UP") return cityZh(a.city);
+  if (a.kind === "ECO_UPGRADE") return `${B.industryZh[a.industry]} · ${cityZh(a.city)}`;
   // 动作类别由标签页 / 确认条前缀给出，这里只写对象，避免「侦查：侦查…」这样的叠字
   const lv = ROMAN[a.level] || "";
   if (a.kind === "BUILD") return `${B.industryZh[a.industry]}${lv} <span class="c">·</span> ${cityZh(a.city)}` +
@@ -466,13 +470,17 @@ function actTitle(a) {
   return "Discard 3 cards to draw 2 wild cards.";
 }
 function actGain(a) {
+  if (a.kind === "CLEAN_UP") return `Pollution ${a.pollutionBefore} → ${a.pollutionAfter} · 1 action + discard`;
+  if (a.kind === "ECO_UPGRADE") return `Sale emissions → ${a.emissionsAfter} · +2 green points when sold`;
   if (a.kind === "BUILD") {
     const bits = [`${a.vp} 分`, `收入 +${a.income}`];
     if (a.produces) bits.push(`产 ${a.produces}`);
+    if (a.pollutionFee) bits.push(`Pollution fee +£${a.pollutionFee}`);
     if (a.linkVp) bits.push(`连线 ${a.linkVp}`);
     if (a.mktSale) bits.push(mktSaleText(a.mktSale, true));
     return bits.join(" · ");
   }
+  if (a.kind === "SELL" && a.ecoPreview) return `Income +${a.income} steps · ${a.vp} VP at era end · ` + a.ecoPreview.map(q => `${cityZh(q.city)} pollution ${q.before} → ${q.after}`).join("; ") + ` · Green +${a.greenGain}`;
   if (a.kind === "SELL") return `时代末 ${a.vp} 分 · 收入 +${a.income}` + (a.hub ? ` · 经${a.hub.zh}` + (a.hub.bonus ? `（港口奖励：${BONUS_FULL[a.hub.bonus]}）` : "") : "") +
     (a.hubProv ? ` · 港内啤酒 ×${a.hubProv}` : "");
   if (a.kind === "NETWORK") return (isSeaLink(a.link) ? "海运" : "陆路") + (a.second ? " · 双铺" : "");
@@ -517,6 +525,17 @@ function explainMove(action) {
 }
 
 
+function showEcoSellSelection() {
+  const candidates = S.placed.filter(t => t.owner === me(S).id && !t.flipped && ["COTTON", "MFG", "LUX"].includes(t.industry));
+  const d = modal(`<h2>Sell selected factories</h2><p>Select factories and one matching trade port. The server checks routes, acceptance and shared beer before selling anything.</p><div class="eco-sell-options">${candidates.map((t,i) => `<label><input type="checkbox" data-tile="${t.id}"> ${B.industryZh[t.industry]} · ${cityZh(t.city)}</label>`).join("")}</div><label>Trade port <select id="ecoHub">${S.hubs.filter(h=>h.open).map(h=>`<option value="${h.id}">${cityZh(h.city)} · ${h.accepts.map(i=>B.industryZh[i]).join(" / ")}</option>`).join("")}</select></label><label>Discard <select id="ecoDiscard">${S.hand.map((c,i)=>`<option value="${i}">${c.label}</option>`).join("")}</select></label><p>Uses 1 action. Port beer is used first; own and connected opponent beer follow. For manual beer choices use individual/pair Sell plans.</p><div class="btns"><button id="ecoSellCancel">Cancel</button><button class="primary" id="ecoSellGo">Confirm selected sale</button></div>`);
+  d.querySelector("#ecoSellCancel").onclick = () => d.remove();
+  d.querySelector("#ecoSellGo").onclick = async () => {
+    const ids=[...d.querySelectorAll("input[data-tile]:checked")].map(e=>e.dataset.tile);
+    if (!ids.length) return toast("Select at least one factory.");
+    const body={sellIds:ids,hubId:d.querySelector("#ecoHub").value,discard:[+d.querySelector("#ecoDiscard").value]};
+    d.remove(); await submit("/api/action",body);
+  };
+}
 function renderActions() {
   const st = S;
   const tabs = $("#acttabs"), list = $("#actlist");
@@ -577,6 +596,9 @@ function renderActions() {
     );
   }
 
+    if (st.eco && UI.tab === "SELL") {
+      const multi=document.createElement("button"); multi.textContent="Choose factories to sell together"; multi.className="eco-multi"; multi.onclick=showEcoSellSelection; list.prepend(multi);
+    }
     renderConfirm();
 
 }
@@ -748,6 +770,7 @@ function renderConfirm() {
   const cost = a.cost ? `$${a.cost}` : "免费";
   const detail = [];
   if (a.base !== null && a.base !== undefined && a.kind === "BUILD") detail.push(`板件 $${a.base}`);
+  if (a.pollutionFee) detail.push(`Pollution fee £${a.pollutionFee}`);
   if (a.mktCash && a.kind !== "DEVELOP") detail.push(`购料 $${a.mktCash}`);
   box.innerHTML = `<div class="ct"><div class="t1">${KIND_ZH[a.kind]}：${actTitle(a)}</div>
       <div class="t2"><b style="color:var(--gold2)">${cost}</b>${detail.length ? `（${detail.join(" + ")}）` : ""} · ${actGain(viewAction(a))} ${srcHTML(a) ? " · " + srcHTML(a) : ""}</div>
@@ -900,13 +923,14 @@ function cityTip(id) {
   const st = V(), c = city(id); if (!c) return;
   const tiles = st.placed.filter(p => p.city === id);
   let h = `<b>${c.zh}</b> <span class="sl">${c.en} · ${c.regionZh}${c.port ? " · 港口" : ""}</span>`;
+  if (st.eco) { const pollution = st.eco.pollution[id] || 0; h += `<div class="eco-tip">Pollution ${pollution}/10 · ${pollution >= 6 ? "Build fee +£5" : "No pollution fee"}</div>`; }
   h += c.slots.map((s, i) => {
     const t = tiles.find(p => p.slot === i);
     if (t) {
       const res = t.resources && ["COAL", "IRON", "PROV"].includes(t.industry)
         ? ` · 存货 ${cubeHTML(t.industry === "COAL" ? "coal" : t.industry === "IRON" ? "iron" : "prov", 11)}×${t.resources}` : "";
       return `<div class="row" style="color:${PCOL[t.owner]}">${iconHTML(t.industry, 13, PCOL[t.owner])} ${B.industryZh[t.industry]}${ROMAN[t.level]}
-        <span class="sl">${t.flipped ? "已翻面" : "未翻面"} · ${pname(st, t.owner)}${res}</span></div>`;
+        <span class="sl">${t.flipped ? "已翻面" : "未翻面"} · ${pname(st, t.owner)}${res}${t.ecoUpgraded ? " · Eco upgraded" : ""}</span></div>`;
     }
     return `<div class="row sl">${s.map(x => iconHTML(x, 12, "#8f826a") + B.industryZh[x]).join(" / ")} · 未被占用</div>`;
   }).join("");
@@ -1391,7 +1415,7 @@ function bgmBind() {
 // ================= 弹层 =================
 function modal(html, cls = "") {
   const d = document.createElement("div"); d.className = "overlay";
-  d.innerHTML = `<div class="modal ${cls}">${html}</div>`;
+  d.innerHTML = `<div class="modal ${cls}">${html}${S && S.eco && html.includes("玩法") ? ECO_RULES_HTML : ""}</div>`;
   document.body.appendChild(d);
   d.addEventListener("click", e => { if (e.target === d && !d.dataset.sticky) d.remove(); });
   return d;
@@ -1415,13 +1439,15 @@ function bindSeg(root, onChange) {
 }
 function showNewGame() {
   const ls = localSave();
-  const o = Object.assign({}, SET);
+  const o = Object.assign({ mode: "eco" }, SET);
   const resume = ls ? `<div class="resume"><div class="t">上一局：<b>${ls.meta.era || ""} 第 ${ls.meta.round || "?"} 轮</b><br>
       ${(ls.meta.players || []).map(p => `${p.name} ${p.vp}分`).join(" · ")}<br><span style="color:var(--dim);font-size:11.5px">${new Date(ls.meta.t || Date.now()).toLocaleString("zh-CN")}</span></div>
       <button class="primary" id="ngResume">继续上局</button></div>` : "";
   const d = modal(`<h2>工业革命 · 世界</h2>
     <div class="sub">Brass: Birmingham 同人世界地图 · 80 城 · 21 区域 · 4 人局（你与 3 个 AI）</div>
     ${resume}
+    <div class="field"><label>Game mode</label>${seg("mode", [["normal", "Classic (original server)"], ["eco", "Eco (local world engine)"]], o.mode)}</div>
+    <div class="eco-start-note">Eco uses this full world map with a newly implemented rules engine and heuristic AI. Classic keeps the original online engine. Eco saves start separately.</div>
     <div class="field"><label>AI 难度</label>${seg("level", [["easy", "新手"], ["normal", "老练"], ["hard", "大师"]], o.level)}
       <div class="seg"><span class="hint" id="lvHint"></span></div></div>
     <div class="field"><label>推荐走法</label>${seg("hints", [["0", "关"], ["1", "开"]], o.hints ? "1" : "0")}</div>
@@ -1431,21 +1457,21 @@ function showNewGame() {
   if (!(S && S.started)) d.dataset.sticky = "1";
   const LVH = { easy: "启发式评分，随机性较大", normal: "价值网络，偶有次优选择", hard: "价值网络 + 整回合前瞻",
     master: "价值网络 + 抽样模拟搜索，最强；每轮需等十余秒" };
-  const sync = () => { d.querySelector("#lvHint").textContent = LVH[o.level]; };
+  const sync = () => { d.querySelector("#lvHint").textContent = o.mode === "eco" ? "Eco AI: heuristic decisions; no original neural-network AI." : LVH[o.level]; };
   bindSeg(d, (k, v) => { o[k] = k === "hints" ? v === "1" : v; sync(); });
   d.querySelectorAll(".avopt").forEach(a => a.onclick = () => { o.avatar = a.dataset.av; d.querySelectorAll(".avopt").forEach(x => x.classList.toggle("on", x === a)); });
   sync();
   if (ls) d.querySelector("#ngResume").onclick = async () => { d.remove(); await resumeLocal(); };
   const c = d.querySelector("#ngCancel"); if (c) c.onclick = () => d.remove();
   d.querySelector("#ngGo").onclick = async () => {
-    Object.assign(SET, { level: o.level, hints: o.hints, avatar: o.avatar }); savePrefs();
+    Object.assign(SET, { level: o.level, hints: o.hints, avatar: o.avatar, mode: o.mode }); savePrefs();
     d.remove(); $$("#final").forEach(x => x.remove());
     PREV_CLEAR();
     // 开局顺位随机，AI 可能先走；大师、宗师难度要算几秒 —— 没提示的话像是点了没反应
     const wait = modal(`<h2>正在开局…</h2><div class="sub">分配本土、洗牌；先行的 AI 正在行动</div>`);
     wait.dataset.sticky = "1";
     let st;
-    try { st = await api("/api/new", { level: o.level, hints: o.hints, avatar: o.avatar }); }
+    try { st = await api("/api/new", { level: o.level, hints: o.hints, avatar: o.avatar, mode: o.mode }); }
     finally { wait.remove(); }
     await playOpening(st);
     if (!SET.reduceMotion) await map.focusRegion(me().home);
@@ -1466,6 +1492,7 @@ const STEPS = () => [
 ];
 // ---------- 玩法：先问会不会玩伯明翰，再讲规则或差异，最后逐一指认界面 ----------
 const KEYS_LINE = `<div class="sub" style="margin:12px 0 0">快捷键：回车 确认 · Esc 取消 · AI 回合中空格 / 回车 下一步、Esc 跳过回放 · F 全局 · H 本土 · I 我的产业 · M 音乐</div>`;
+const ECO_RULES_HTML = `<section class="eco-help"><h3>Eco Mode · Environmental rules</h3><ul><li>On Sell: cotton +1, manufacturing +2, pottery +3 city pollution (cap 10).</li><li>At pollution 6–10, every player's new Build costs an extra £5.</li><li>Clean Up: £5 + one action + one discard; reduce pollution by 3 in a city with your factory.</li><li>Eco Upgrade: £8 + one action + one discard; upgrade your unsold sales factory once. Its sale emits 2 less pollution, minimum zero.</li><li>Sell an upgraded factory: gain 2 green points, once. Each converts to 1 VP only at final scoring.</li><li>Pollution persists across eras. Coal, iron and breweries do not emit in this version.</li></ul><p>Eco runs a newly implemented world engine and heuristic AI. Classic retains the original online engine. See ECO_README_CN.md for compatibility limits.</p></section>`;
 function showHelp() {
   const d = modal(`<button class="x">✕</button><h2>玩法</h2>
     <div class="sub">你玩过《工业革命：伯明翰》吗？</div>
@@ -1633,7 +1660,7 @@ function showSettings() {
 }
 function showFinal() {
   const st = S, rank = [...st.players].sort((a, b) => b.vp - a.vp || b.income - a.income || b.money - a.money);   // 同分比收入，再比现金
-  const cols = [["tiles", "板件"], ["links", "连线"], ["contested", "争夺"], ["hub", "贸易港"], ["debt", "欠债"]];
+  const cols = [["green", "Green"], ["tiles", "板件"], ["links", "连线"], ["contested", "争夺"], ["hub", "贸易港"], ["debt", "欠债"]];
   const bk = st.vpBreak || {};
   const mine = rank.findIndex(p => p.isMe) + 1;
   const d = modal(`<h2>对局结束</h2><div class="sub">${mine === 1 ? "获胜。" : `第 ${mine} 名。`}胜利点按来源拆分</div>

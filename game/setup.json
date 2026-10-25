@@ -1,0 +1,564 @@
+{
+  "hubs": [
+    {
+      "id": "h_london",
+      "city": "london",
+      "zh": "伦敦交易所",
+      "accepts": [
+        "COTTON",
+        "LUX",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_liverpool",
+      "city": "liverpool",
+      "zh": "利物浦码头",
+      "accepts": [
+        "COTTON",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_glasgow",
+      "city": "glasgow",
+      "zh": "克莱德港",
+      "accepts": [
+        "MFG"
+      ],
+      "minPlayers": 4
+    },
+    {
+      "id": "h_amsterdam",
+      "city": "amsterdam",
+      "zh": "阿姆斯特丹交易所",
+      "accepts": [
+        "LUX",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_hamburgproxy",
+      "city": "rotterdam",
+      "zh": "鹿特丹集散地",
+      "accepts": [
+        "COTTON",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_marseille",
+      "city": "marseille",
+      "zh": "马赛黎凡特行",
+      "accepts": [
+        "COTTON",
+        "LUX"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_newyork",
+      "city": "newyork",
+      "zh": "纽约港",
+      "accepts": [
+        "COTTON",
+        "LUX",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_neworleans",
+      "city": "neworleans",
+      "zh": "新奥尔良棉市",
+      "accepts": [
+        "COTTON"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_bombay",
+      "city": "bombay",
+      "zh": "孟买管区",
+      "accepts": [
+        "COTTON",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_shanghai",
+      "city": "shanghai",
+      "zh": "上海外滩",
+      "accepts": [
+        "LUX",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_hongkong",
+      "city": "hongkong",
+      "zh": "香港转口港",
+      "accepts": [
+        "COTTON",
+        "LUX",
+        "MFG"
+      ],
+      "minPlayers": 4
+    },
+    {
+      "id": "h_sydney",
+      "city": "sydney",
+      "zh": "悉尼码头",
+      "accepts": [
+        "MFG",
+        "PROV"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_sanfrancisco",
+      "city": "sanfrancisco",
+      "zh": "旧金山金门港",
+      "accepts": [
+        "LUX",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_alexandria",
+      "city": "alexandria",
+      "zh": "亚历山大棉花交易所",
+      "accepts": [
+        "COTTON",
+        "LUX"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_singapore",
+      "city": "singapore",
+      "zh": "新加坡转口港",
+      "accepts": [
+        "LUX",
+        "MFG"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_yokohama",
+      "city": "yokohama",
+      "zh": "横滨居留地",
+      "accepts": [
+        "LUX"
+      ],
+      "minPlayers": 3
+    },
+    {
+      "id": "h_rio",
+      "city": "rio",
+      "zh": "里约热内卢港",
+      "accepts": [
+        "COTTON",
+        "MFG"
+      ],
+      "minPlayers": 3
+    }
+  ],
+  "cards": [
+    [
+      "REGION",
+      "LANCS"
+    ],
+    [
+      "INDUSTRY",
+      "PROV"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "RUHR"
+    ],
+    [
+      "INDUSTRY",
+      "IRON"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "SILESIA"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "MEDIT"
+    ],
+    [
+      "INDUSTRY",
+      "PROV"
+    ],
+    [
+      "REGION",
+      "LOWC"
+    ],
+    [
+      "REGION",
+      "INDIA"
+    ],
+    [
+      "REGION",
+      "SOUTHBR"
+    ],
+    [
+      "REGION",
+      "LOWC"
+    ],
+    [
+      "REGION",
+      "BALTIC"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "FRANCE"
+    ],
+    [
+      "REGION",
+      "WESTUS"
+    ],
+    [
+      "REGION",
+      "SOUTHUS"
+    ],
+    [
+      "REGION",
+      "CHINA"
+    ],
+    [
+      "REGION",
+      "OCEANIA"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "INDUSTRY",
+      "COAL"
+    ],
+    [
+      "REGION",
+      "FRANCE"
+    ],
+    [
+      "INDUSTRY",
+      "PROV"
+    ],
+    [
+      "REGION",
+      "LAKES"
+    ],
+    [
+      "REGION",
+      "MIDYORK"
+    ],
+    [
+      "REGION",
+      "JAPAN"
+    ],
+    [
+      "REGION",
+      "RUHR"
+    ],
+    [
+      "REGION",
+      "LANCS"
+    ],
+    [
+      "INDUSTRY",
+      "PROV"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "AFRICA"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "OCEANIA"
+    ],
+    [
+      "REGION",
+      "OCEANIA"
+    ],
+    [
+      "REGION",
+      "SILESIA"
+    ],
+    [
+      "INDUSTRY",
+      "PROV"
+    ],
+    [
+      "INDUSTRY",
+      "IRON"
+    ],
+    [
+      "REGION",
+      "AFRICA"
+    ],
+    [
+      "REGION",
+      "LATAM"
+    ],
+    [
+      "REGION",
+      "INDIA"
+    ],
+    [
+      "INDUSTRY",
+      "COAL"
+    ],
+    [
+      "INDUSTRY",
+      "PROV"
+    ],
+    [
+      "REGION",
+      "NORTHBR"
+    ],
+    [
+      "REGION",
+      "AFRICA"
+    ],
+    [
+      "REGION",
+      "SOUTHBR"
+    ],
+    [
+      "REGION",
+      "LAKES"
+    ],
+    [
+      "INDUSTRY",
+      "LUX"
+    ],
+    [
+      "REGION",
+      "SEASIA"
+    ],
+    [
+      "INDUSTRY",
+      "LUX"
+    ],
+    [
+      "REGION",
+      "NEENG"
+    ],
+    [
+      "REGION",
+      "MIDYORK"
+    ],
+    [
+      "INDUSTRY",
+      "LUX"
+    ],
+    [
+      "INDUSTRY",
+      "COAL"
+    ],
+    [
+      "REGION",
+      "MEDIT"
+    ],
+    [
+      "REGION",
+      "LAKES"
+    ],
+    [
+      "REGION",
+      "INDIA"
+    ],
+    [
+      "REGION",
+      "SOUTHUS"
+    ],
+    [
+      "REGION",
+      "SEASIA"
+    ],
+    [
+      "REGION",
+      "NORTHBR"
+    ],
+    [
+      "INDUSTRY",
+      "COAL"
+    ],
+    [
+      "REGION",
+      "MIDYORK"
+    ],
+    [
+      "REGION",
+      "MEDIT"
+    ],
+    [
+      "REGION",
+      "FRANCE"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "INDUSTRY",
+      "LUX"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "SOUTHUS"
+    ],
+    [
+      "REGION",
+      "NEENG"
+    ],
+    [
+      "REGION",
+      "NEENG"
+    ],
+    [
+      "REGION",
+      "JAPAN"
+    ],
+    [
+      "REGION",
+      "NORTHBR"
+    ],
+    [
+      "REGION",
+      "LOWC"
+    ],
+    [
+      "REGION",
+      "WESTUS"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "BALTIC"
+    ],
+    [
+      "REGION",
+      "LANCS"
+    ],
+    [
+      "REGION",
+      "RUHR"
+    ],
+    [
+      "REGION",
+      "CHINA"
+    ],
+    [
+      "REGION",
+      "SILESIA"
+    ],
+    [
+      "REGION",
+      "LATAM"
+    ],
+    [
+      "REGION",
+      "CHINA"
+    ],
+    [
+      "REGION",
+      "WESTUS"
+    ],
+    [
+      "INDUSTRY",
+      "IRON"
+    ],
+    [
+      "INDUSTRY",
+      "COTTON+MFG"
+    ],
+    [
+      "REGION",
+      "SEASIA"
+    ],
+    [
+      "INDUSTRY",
+      "IRON"
+    ],
+    [
+      "REGION",
+      "JAPAN"
+    ],
+    [
+      "INDUSTRY",
+      "COAL"
+    ],
+    [
+      "INDUSTRY",
+      "PROV"
+    ],
+    [
+      "REGION",
+      "LATAM"
+    ],
+    [
+      "REGION",
+      "SOUTHBR"
+    ],
+    [
+      "INDUSTRY",
+      "IRON"
+    ],
+    [
+      "REGION",
+      "BALTIC"
+    ],
+    [
+      "INDUSTRY",
+      "IRON"
+    ]
+  ]
+}

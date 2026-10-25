@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Local frontend server; preserves the original Brassworld rules via its API."""
-import argparse, http.cookiejar, json, os, secrets, threading
+import argparse, http.cookiejar, json, os, secrets, threading, sqlite3, hmac, hashlib
+from game import engine as eco_engine
 from http.cookies import SimpleCookie
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -9,6 +10,15 @@ from urllib.parse import urlsplit
 from urllib.request import Request, build_opener, HTTPCookieProcessor
 
 ROOT = Path(__file__).resolve().parent
+DB_PATH = os.environ.get('ECO_DB_PATH', str(ROOT / 'eco_games.sqlite3'))
+with sqlite3.connect(DB_PATH) as _db:
+    _db.execute('CREATE TABLE IF NOT EXISTS eco_games (sid TEXT PRIMARY KEY, state TEXT NOT NULL)')
+    _db.execute('CREATE TABLE IF NOT EXISTS eco_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
+    _db.execute("INSERT OR IGNORE INTO eco_meta VALUES ('signing_key', ?)", (secrets.token_hex(32),))
+    SAVE_KEY = bytes.fromhex(_db.execute("SELECT value FROM eco_meta WHERE key='signing_key'").fetchone()[0])
+
+def sign_save(save):
+    return hmac.new(SAVE_KEY, json.dumps(save['game'], sort_keys=True, separators=(',', ':')).encode(), hashlib.sha256).hexdigest()
 UPSTREAM = 'https://brass.iboardgame.app'
 ALLOWED = {'/api/state', '/api/new', '/api/action', '/api/pass', '/api/load', '/api/settings'}
 sessions = {}
@@ -35,12 +45,15 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception: pass
         sid = cookie['atlas_sid'].value if 'atlas_sid' in cookie else None
         with sessions_lock:
-            if sid not in sessions:
+            if not sid or len(sid) != 32 or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-' for c in sid):
                 sid = secrets.token_urlsafe(24)
+            if sid not in sessions:
                 sessions[sid] = (build_opener(HTTPCookieProcessor(http.cookiejar.CookieJar())), threading.Lock())
             return sid, sessions[sid]
 
     def json_reply(self, code, payload, sid=None):
+        if payload.get('engine') == 'atlas-eco-v1' and payload.get('save'):
+            payload['save']['signature'] = sign_save(payload['save'])
         data = json.dumps(payload, ensure_ascii=False).encode()
         self.send_response(code)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -49,6 +62,40 @@ class Handler(SimpleHTTPRequestHandler):
         if sid: self.send_header('Set-Cookie', f'atlas_sid={sid}; HttpOnly; SameSite=Strict; Path=/')
         self.end_headers()
         self.wfile.write(data)
+
+    def eco_dispatch(self, path, body, sid):
+        try:
+            with sqlite3.connect(DB_PATH, timeout=60) as db:
+                db.execute('BEGIN IMMEDIATE')
+                row = db.execute('SELECT state FROM eco_games WHERE sid=?', (sid,)).fetchone()
+                if path == '/api/new' and body.get('mode') == 'eco':
+                    state = eco_engine.new_game(body)
+                    result = eco_engine.public_state(state)
+                elif path == '/api/load' and isinstance(body.get('save'), dict) and body['save'].get('engine') == 'atlas-eco-v1':
+                    save = body['save']
+                    if not hmac.compare_digest(str(save.get('signature','')), sign_save(save)):
+                        raise eco_engine.RuleError('This Eco save cannot be verified on this server. Start a new Eco game; saves from another server need a migration.')
+                    state = save['game']
+                    result = eco_engine.public_state(state)
+                elif path in ('/api/new','/api/load'):
+                    return False
+                elif row:
+                    state = json.loads(row[0])
+                    result = eco_engine.public_state(state) if path == '/api/state' else eco_engine.handle(state,path,body)
+                elif path == '/api/state':
+                    # Opening the new-game selector must work offline. Classic
+                    # restores its browser save via /api/load when requested.
+                    self.json_reply(200, {'started': False}, sid)
+                    return True
+                else:
+                    return False
+                db.execute('INSERT INTO eco_games VALUES (?,?) ON CONFLICT(sid) DO UPDATE SET state=excluded.state', (sid,json.dumps(state)))
+            self.json_reply(200,result,sid)
+        except (eco_engine.RuleError, KeyError, TypeError, ValueError) as error:
+            self.json_reply(400, {'error': str(error), 'started': False},sid)
+        except sqlite3.Error:
+            self.json_reply(503, {'error':'Eco save is busy or unavailable. Try again.'},sid)
+        return True
 
     def proxy_api(self):
         path = urlsplit(self.path).path
@@ -70,12 +117,18 @@ class Handler(SimpleHTTPRequestHandler):
             try: json.loads(body)
             except Exception: return self.json_reply(400, {'error': 'Expected a JSON game request.'})
         sid, (opener, lock) = self.session()
+        payload = json.loads(body) if body else {}
+        if not isinstance(payload, dict): return self.json_reply(400, {'error':'Expected a JSON object.'}, sid)
+        with lock:
+            if self.eco_dispatch(path, payload, sid): return
         req = Request(UPSTREAM + path, data=body, method=self.command,
             headers={'Content-Type':'application/json', 'Accept':'application/json',
                      'User-Agent':'Brassworld-Atlas-Local/1.0'})
         try:
             with lock, opener.open(req, timeout=180) as r:
                 result = json.loads(r.read())
+            if path in ('/api/new', '/api/load') and result.get('started'):
+                with sqlite3.connect(DB_PATH) as db: db.execute('DELETE FROM eco_games WHERE sid=?', (sid,))
             self.json_reply(200, result, sid)
         except HTTPError as e:
             self.json_reply(502, {'error': f'The original game service returned HTTP {e.code}. Please try again later.'}, sid)
@@ -112,7 +165,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f'Brassworld Atlas: http://{args.host}:{args.port}', flush=True)
-    print('Local interface; original online game service supplies rules and AI.', flush=True)
+    print('Classic: upstream rules. Eco: independent local world engine + Eco AI.', flush=True)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally: server.server_close()
