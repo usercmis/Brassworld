@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/theme/atlas.css?v=accessibility-hint-1">
 <script type="module" src="/theme/english.js"></script>
+<link rel="stylesheet" href="/theme/eco.css?v=full-1">
 </head>
 <body>
 <a class="skip-link" href="#mapwrap">Skip to the map and game controls</a>
@@ -20,14 +21,15 @@
     <div class="brand">Brassworld</div>
     <span class="chip" id="eraChip">—</span>
     <span class="meta" id="roundInfo"></span>
-    <span class="pips" id="pips" title="本回合剩余动作"></span>
+    <span class="pips" id="pips" title="Actions remaining this turn"></span>
     <span class="spacer"></span>
+    <button id="btnMusic" class="musicbtn" title="Background music (M)" aria-label="Background music">♪</button>
     <nav id="menu">
-      <button id="btnNew" class="primary">新开一局</button>
-      <button id="btnHelp">玩法</button>
-      <button id="btnSettings">设置</button>
+      <button id="btnNew" class="primary">New game</button>
+      <button id="btnHelp">How to play</button>
+      <button id="btnSettings">Settings</button>
     </nav>
-    <button id="btnMenu" class="iconbtn" aria-label="菜单">☰</button>
+    <button id="btnMenu" class="iconbtn" aria-label="Menu">☰</button>
   </header>
 
   <section id="infobar">
@@ -36,7 +38,7 @@
   </section>
 
   <main id="mapwrap" tabindex="-1" aria-label="Game map and controls">
-    <svg id="map" aria-label="世界地图"></svg>
+    <svg id="map" aria-label="World map"></svg>
     <details id="cityNavigator">
       <summary>City and connection navigator</summary>
       <button id="btnCitiesClose" class="city-nav-close" type="button">Close</button>
@@ -49,31 +51,31 @@
     <div id="hint" class="hide"></div>
     <div id="mapbtns">
       <button id="btnCities" type="button" aria-controls="cityNavigator" aria-expanded="false">Cities</button>
-      <button id="btnWorld" title="全局视图（F）">全局</button>
-      <button id="btnHome" title="定位本土（H）">本土</button>
-      <button id="btnNet" title="仅显示你的网络（可以建造的城市）">网络</button>
-      <button id="btnMine" title="高亮你的产业（I）">我的</button>
-      <button id="btnLog" title="行动记录">记录</button>
+      <button id="btnWorld" title="World view (F)">World</button>
+      <button id="btnHome" title="Go to home region (H)">Home</button>
+      <button id="btnNet" title="Show your network and cities where you can build">Network</button>
+      <button id="btnMine" title="Highlight your industries (I)">Mine</button>
+      <button id="btnLog" title="Game journal">Journal</button>
     </div>
     <div id="tip" class="hide"></div>
-    <aside id="logpanel" class="hide"><div class="lp-head">行动记录<button class="x" id="logClose">✕</button></div><div id="log"></div></aside>
+    <aside id="logpanel" class="hide"><div class="lp-head">Game journal<button class="x" id="logClose">✕</button></div><div id="log"></div></aside>
     <div id="actfeed"></div>
     <div id="playbar" class="hide"><span id="playwho"></span><span class="spacer"></span>
-      <button id="btnSkip" title="跳过剩余回放，直接看结果（Esc）">跳过 ▸▸</button></div>
+      <button id="btnSkip" title="Skip the remaining replay (Esc)">Skip replay ▸▸</button></div>
     <div id="banner" class="hide"></div>
   </main>
 
   <footer id="dock">
     <div id="sheetHandle"><span></span></div>
     <div id="sheetTabs">
-      <button data-pane="hand" class="on">手牌</button>
-      <button data-pane="act">行动<b id="actCount"></b></button>
-      <button data-pane="mat">板件</button>
-      <button data-pane="mkt">市场</button>
-      <button data-pane="log">记录</button>
+      <button data-pane="hand" class="on">Hand</button>
+      <button data-pane="act">Action<b id="actCount"></b></button>
+      <button data-pane="mat">Tiles</button>
+      <button data-pane="mkt">Market</button>
+      <button data-pane="log">Journal</button>
     </div>
     <section id="handPane" class="pane on" data-pane="hand">
-      <div class="sec">手牌 <span class="sub" id="handSub"></span></div>
+      <div class="sec">Hand <span class="sub" id="handSub"></span></div>
       <div id="cards"></div>
     </section>
     <section id="actPane" class="pane" data-pane="act">
@@ -82,7 +84,7 @@
       <div id="actlist"></div>
     </section>
     <section id="matPane" class="pane" data-pane="mat">
-      <div class="sec">板件 · 下一块 <button id="btnMat" class="mini">全部板件</button></div>
+      <div class="sec">Next industry tiles <button id="btnMat" class="mini">All tiles</button></div>
       <div id="mat"></div>
     </section>
     <section id="mktPane" class="pane mobile-only" data-pane="mkt"><div id="markets2" class="markets"></div></section>
@@ -92,6 +94,6 @@
 <div id="cardpop" class="hide"></div>
 <div id="fx"></div>
 <div id="toasts"></div>
-<script type="module" src="/js/app.js?v=accessibility-hint-1"></script>
+<script type="module" src="/js/app.js?v=industrial-belt-20-v1"></script>
 </body>
 </html>
