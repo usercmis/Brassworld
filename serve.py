@@ -81,6 +81,11 @@ class Handler(SimpleHTTPRequestHandler):
                     return False
                 elif row:
                     state = json.loads(row[0])
+                    if state.get('mapId') != eco_engine.MAP_ID:
+                        if path == '/api/state':
+                            self.json_reply(200, {'started': False}, sid)
+                            return True
+                        raise eco_engine.RuleError('Start a new Eco game for the Industrial Belt 20 map.')
                     result = eco_engine.public_state(state) if path == '/api/state' else eco_engine.handle(state,path,body)
                 elif path == '/api/state':
                     # Opening the new-game selector must work offline. Classic
