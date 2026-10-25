@@ -1,3 +1,5 @@
+> English localization branch: see [LOCALIZATION.md](LOCALIZATION.md) for current implementation and verification. The original snapshot remains in `upstream/`; frontend modules now contain English rendering templates.
+
 # Brassworld — An Industrial Atlas
 
 英文界面与 Parallels 风格的本地改版。没有发布网站。
@@ -27,8 +29,8 @@ macOS / Linux：在此文件夹运行 `python3 serve.py`。
 - 使用与参考网站一致的 Playfair Display / EB Garamond 英文字体。
 - 重新设计菜单、玩家信息、卡牌、市场与对话框的视觉样式。
 - 加入英文地图标签、产业名称、控制提示、开局设置、规则说明及导览。
-- 使用独立的显示层翻译，保留原始游戏对象和动作数据。
-- 地图几何、城市坐标、地区、产业配置和原始三个 JS 模块保持原样。
+- 在前端渲染源中使用完整英文模板；保留原始游戏对象、动作数据与存档。
+- 地图几何、城市坐标、地区与产业配置保持原样；JS 模块的显示文本已本地化。
 
 ## 必须知道的运行条件
 
@@ -44,12 +46,12 @@ macOS / Linux：在此文件夹运行 `python3 serve.py`。
 
 ## 已完成的验证
 
-- 原 `app.js`、`map.js`、`art.js`、基础 CSS、地图 JSON 的字节校验一致。
+- `upstream/` 保留原始参考文件；当前前端本地化验证见 LOCALIZATION.md。
 - JS 语法与 Python 编译检查通过。
 - 本地 API 适配器连接原服务，成功测试：创建四人对局 → 执行合法建造 → 跳过动作及 AI 响应 → 导入存档恢复；恢复后得分、现金、收入一致。
 - 在上述真实测试状态的文字数据中，英文翻译检查未发现剩余汉字。
 - 浏览器已检查英文开局界面、地图标签和完整英文规则说明。
-- 当前预览服务器的域名解析受限，未完成浏览器内的完整对局或全局结算验证。少见的原服务提示与 AI 说明仍可能需要后续补充翻译。
+- 已完成真实浏览器整局验证，覆盖 AI、两个时代、通知与最终结算；未来上游新增消息会保留原文并记录诊断。
 
 ## 文件结构
 
@@ -60,7 +62,7 @@ macOS / Linux：在此文件夹运行 `python3 serve.py`。
 | `dist/theme/atlas.css` | 全部新增的视觉样式 |
 | `dist/theme/english.js` | 英文显示、英文规则与导览 |
 | `dist/theme/geography.json` | 城市和地区英文对应表 |
-| `dist/js/` | 原版前端程序，未修改 |
+| `dist/js/` | 前端程序，英文渲染模板已更新 |
 | `dist/css/app.css` | 原版基础样式，未修改；由新增主题覆盖 |
 | `dist/assets/` | 原地图几何、产业图片、头像与音乐 |
 | `dist/fonts/` | 本地英文字体 |

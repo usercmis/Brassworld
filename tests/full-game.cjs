@@ -34,15 +34,19 @@ const fs=require('node:fs');
  while(steps<65){
   const state=await page.evaluate(()=>({over:window.__bw.S.over,era:window.__bw.S.era,round:window.__bw.S.round}));eras.add(state.era);
   if(state.over)break;
-  await page.locator('#passbtn').click();await page.locator('#btnGo').click();
+  await page.locator('#passbtn').click();
+  const responsePromise=page.waitForResponse(r=>r.url().endsWith('/api/pass'));
+  await page.locator('#btnGo').click();
+  const response=await responsePromise;
+  if(!response.ok())throw new Error('Game service unavailable during pass: HTTP '+response.status());
   await page.waitForFunction(()=>!window.__bw.UI.busy&&!window.__bw.UI.playing,{},{timeout:180000});
-  steps++;if(steps%4===0)console.log('progress',steps,state.era,state.round);
+  await page.waitForTimeout(300);steps++;if(steps%4===0)console.log('progress',steps,state.era,state.round);
  }
  await page.waitForSelector('#final',{timeout:10000});
  const result=await page.evaluate(()=>({over:window.__bw.S.over,era:window.__bw.S.era,round:window.__bw.S.round,breakdown:window.__bw.S.vpBreak,visibleChinese:[...new Set(window.__visibleChinese)]}));
  assert(result.over);assert(eras.has('E1')&&eras.has('E2'));assert(result.breakdown);
  const text=await page.locator('body').innerText();assert(!/[\u3400-\u9fff]/.test(text),'Chinese in final screen');
- await page.screenshot({path:'/tmp/brass-final.png'});
+ await page.waitForTimeout(400);await page.screenshot({path:'/tmp/brass-final.png'});
  fs.writeFileSync('/tmp/brass-full-game-messages.json',JSON.stringify([...messages].sort(),null,2));
  fs.writeFileSync('/tmp/brass-full-game-result.json',JSON.stringify({...result,steps,errors,unknown:[...new Set(unknown)]},null,2));
  assert.deepEqual(errors,[]);assert.deepEqual(result.visibleChinese,[]);assert.deepEqual([...new Set(unknown)],[]);

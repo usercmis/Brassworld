@@ -41,7 +41,11 @@ const fs = require('node:fs');
  await scan('confirmed action and AI response');
  await page.locator('#btnLog').click();await scan('action journal');await page.locator('#logClose').click();
  await page.locator('#btnMat').click();await scan('industry board');await page.locator('.overlay .x').click();
- await page.locator('#btnSettings').click();await scan('settings');await page.locator('.modal .btns button').click();
+ await page.locator('#btnCities').click();await scan('city navigator');await page.locator('#btnCitiesClose').click();
+ await page.locator('#btnSettings').click();await scan('settings');
+ for(const mode of ['light','dark','off']){await page.locator(`.seg[data-name="contrastMode"] [data-v="${mode}"]`).click();await scan('contrast '+mode)}
+ await page.locator('.seg[data-name="largeText"] [data-v="1"]').click();await scan('larger text');
+ await page.locator('.seg[data-name="largeText"] [data-v="0"]').click();await page.locator('.modal .btns button').click();
  const before=await page.evaluate(()=>{const s=window.__bw.S;return {era:s.era,round:s.round,players:s.players.map(p=>({id:p.id,name:p.name,money:p.money,income:p.income,vp:p.vp})),save:JSON.parse(localStorage.getItem('bw_save'))}});
  await page.context().clearCookies();await page.reload();
  await page.waitForFunction(()=>window.__bw?.S?.started,{},{timeout:180000});await scan('saved game restore');
