@@ -641,3 +641,11 @@ table.score tr.me td{background:rgba(201,161,90,.08)}
 #mapbtns {
   display: none !important;
 }
+#markets .mz[data-zone="BRITAIN"],
+#markets2 .mz[data-zone="BRITAIN"] {
+  display: none !important;
+}
+
+#markets {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
