@@ -11,10 +11,10 @@ test('shortlist prioritizes Advisor, preserves legal action identity and input/s
  const state = {actions, save:{version:1, legacy:true}};
  const original = JSON.stringify(state);
  const result = context.shortlist(actions);
- assert.deepEqual(Array.from(result, a => a.i), [8,4,7]);
+ assert.deepEqual(Array.from(result, a => a.i), [8]);
  assert.equal(result[0], actions[2]);
  assert.equal(JSON.stringify(state), original);
- for (let n=0;n<4;n++) assert.equal(context.shortlist(actions.slice(0,n)).length, Math.min(n,3));
+ for (let n=0;n<4;n++) assert.equal(context.shortlist(actions.slice(0,n)).length, (n >= 3 ? 1 : 0));
 });
 test('summaries cover player and opponent changes and era transitions', () => {
  const before={era:'E1',round:1,players:[{id:0,isMe:true,money:20,income:0,vp:0,hand:8},{id:1,name:'AI',money:10}]};
@@ -31,7 +31,7 @@ test('both shipped interfaces render and switch without network or save mutation
  vm.runInContext(helpers+'\n'+source+`\nB={industryZh:{}}; renderConfirm=()=>{}; actThumb=()=>''; actTitle=a=>a.kind; actGain=()=>''; srcHTML=()=>'';
  S={started:true,ver:1,active:0,players:[{id:0,isMe:true,money:20}],actions:[{i:0,kind:'LOAN'},{i:1,kind:'SCOUT',best:true},{i:2,kind:'LOAN'},{i:3,kind:'SCOUT'}]};
  SET.displayMode='beginner'; renderActions();`,ctx);
- assert.equal((element('#actlist').innerHTML.match(/data-i=/g)||[]).length,3);
+ assert.equal((element('#actlist').innerHTML.match(/data-i=/g)||[]).length,1);
  assert.ok(element('#actlist').innerHTML.includes('Advisor choice'));
  element('#showAllOptions').onclick();
  assert.ok(element('#acttabs').innerHTML.includes('data-k='));
@@ -39,6 +39,14 @@ test('both shipped interfaces render and switch without network or save mutation
  assert.ok(element('#acttabs').innerHTML.includes('data-k='));
  assert.ok(!element('#acttabs').innerHTML.includes('showAllOptions'));
  vm.runInContext(`SET.displayMode='beginner'; renderActions();`,ctx);
- assert.equal((element('#actlist').innerHTML.match(/data-i=/g)||[]).length,3);
+ assert.equal((element('#actlist').innerHTML.match(/data-i=/g)||[]).length,1);
  assert.equal(storage.get('bw_save'),'{"old":"unchanged"}');
+});
+
+test('missing evaluation never produces invented ranks or inferred scores', () => {
+ const actions = Object.freeze([Object.freeze({i:1,kind:'SELL',score:999}),Object.freeze({i:2,kind:'LOAN'})]);
+ assert.equal(context.shortlist(actions).length,0);
+ assert.equal(context.shortlist().length,0);
+ const evaluated = Object.freeze([Object.freeze({i:1,best:true}),Object.freeze({i:2,best:false})]);
+ assert.equal(context.shortlist(evaluated)[0],evaluated[0]);
 });

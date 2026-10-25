@@ -1,4 +1,4 @@
-import { shortlist, moveSummary } from "./display-modes.js";
+import { shortlist, moveSummary } from "./display-modes.js?v=2";
 // 《工业革命：世界》前端主程序
 import { SYMBOLS, PCOL, IND_ART, artCSS, regionArt, iconHTML, cubeHTML, avatarHTML, AVATARS, AVATAR_ZH,
   ROMAN, BONUS_FULL, BONUS_SHORT, IND_ORDER } from "./art.js";
@@ -534,11 +534,12 @@ function renderActions() {
   if (!myTurn) { tabs.innerHTML = ""; list.innerHTML = `<div class="empty">等待其他玩家…</div>`; return; }
   if (SET.displayMode === "beginner" && !UI.allOptions && !UI.filter) {
     tabs.innerHTML = '<button type="button" id="showAllOptions">Show All Options</button><button type="button" id="passbtn" class="passbtn">Pass</button>';
-    list.innerHTML = '<p>Strategy Advisor: its starred choice comes first. Other options are legal alternatives, not ranked recommendations.</p>' + shortlist(st.actions).map(a => `
+    list.innerHTML = '<p>Strategy Advisor currently supplies only its best move, not a ranked top three. Only Advisor-evaluated recommendations are shown. Use Show All Options for every legal move.</p>' + shortlist(st.actions).map(a => `
       <button type="button" class="act ${UI.sel === a.i ? "sel" : ""}" data-i="${a.i}" aria-pressed="${UI.sel === a.i}">
       ${actThumb(a)}<span class="body"><span class="tx">${a.best ? "★ Advisor choice · " : "Alternative · "}${KIND_ZH[a.kind]}: ${actTitle(a)}</span>
       <span class="gain">${actGain(a)}</span><span class="src">${explainMove(a)}</span></span>
       <span class="price">$${a.cost ?? 0}</span></button>`).join("");
+    if (st.actions.length && !shortlist(st.actions).length) list.innerHTML += '<p>No Advisor recommendation is available. Enable Suggested moves in Settings or use Show All Options.</p>';
     if (!st.actions.length) list.innerHTML += '<p>No legal actions available. You can pass.</p>';
     $("#showAllOptions").onclick = () => { UI.allOptions = true; renderActions(); };
     renderConfirm(); return;

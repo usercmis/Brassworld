@@ -1,6 +1,7 @@
-// Presentation only: preserve server action objects, IDs, and order among alternatives.
+// The existing Advisor exposes only a best flag, not scores or a top-three ranking.
+// Display only evaluated recommendations; never rank arbitrary legal alternatives.
 export function shortlist(actions = []) {
-  return [...actions.filter(a => a.best), ...actions.filter(a => !a.best)].slice(0, 3);
+  return actions.filter(a => a.best).slice(0, 3);
 }
 export function moveSummary(before, after) {
   const changes = [];

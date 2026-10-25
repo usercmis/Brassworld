@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
   S={started:true,active:0,ver:1,players:[{id:0,isMe:true,money:20}],actions:[{i:0,kind:'LOAN'},{i:1,kind:'SCOUT',best:true},{i:2,kind:'LOAN'},{i:3,kind:'SCOUT'}]};
   SET.displayMode='beginner'; renderActions(); renderBeginnerHelp();
   window.modeTest={settings:showSettings, state:S, prefs:SET};`});
-  assert.equal(await page.locator('#actlist .act').count(),3);
+  assert.equal(await page.locator('#actlist .act').count(),1);
   await page.getByRole('button',{name:'Show All Options'}).click();
   assert.equal(await page.locator('#acttabs [data-k]').count(),2);
   await page.evaluate(()=>modeTest.settings());
@@ -21,7 +21,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.evaluate(()=>modeTest.prefs.displayMode),'classic');
   assert.equal(await page.locator('#beginnerHelp').isVisible(),false);
   await page.getByRole('button',{name:'Beginner',exact:true}).click();
-  assert.equal(await page.locator('#actlist .act').count(),3);
+  assert.equal(await page.locator('#actlist .act').count(),1);
   assert.equal(await page.evaluate(()=>modeTest.state.actions.length),4);
   console.log('Browser: Beginner shortlist, Show All Options, Settings switches and legal actions passed.');
  } finally {await browser.close();}
