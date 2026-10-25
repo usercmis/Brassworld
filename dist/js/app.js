@@ -66,14 +66,23 @@ async function boot() {
   setSheet("hand", false);
   document.addEventListener("visibilitychange", () => { if (document.hidden && UI.playing) UI.skip = true; });
   window.__bw = { get map() { return map; }, get S() { return S; }, get D() { return D; }, get BGM() { return BGM; }, UI, SET, renderAll };   // 调试用
-  const st = await api("/api/state");
-  if (st.started) {
-    await applyState(st, false);
-    map.focusRegion(me().home);
-  } else if (localSave() && await resumeLocal(true)) {
-    // 服务器重启过、会话没了：有本地存档就直接续上，不用玩家再点一次
-    toast("Previous game restored.");
-  } else {
+  let restored = false;
+  try {
+    const st = await api("/api/state");
+    if (st.started) {
+      await applyState(st, false);
+      map.focusRegion(me().home);
+      restored = true;
+    } else if (localSave()) {
+      restored = await resumeLocal(true);
+      if (restored) toast("Previous game restored.");
+    }
+  } catch (error) {
+    // Keep the browser save intact if this server cannot restore it.
+    console.warn("Unable to restore previous game:", error.message);
+    toast("Your previous game could not be restored. Start a new game or import a compatible save in Settings.");
+  }
+  if (!restored) {
     map.fitWorld();
     showNewGame();
   }
